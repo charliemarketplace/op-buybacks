@@ -17,3 +17,25 @@ In January 2026, Optimism governance [approved](https://www.coindesk.com/busines
 ### Strategic Significance
 
 The Superchain currently captures **61% of L2 fee market share** and processes 13% of all crypto transactions. This buyback mechanism transitions OP from a pure governance token to one with value accrual tied to Superchain growth.
+
+---
+
+## Analysis Scope
+
+This case study focuses on:
+
+- **Revenue source**: OP Mainnet transaction fees only (denominated in ETH)
+- **Execution venue**: Uniswap V3 OP/WETH 0.3% pool on OP Mainnet
+
+### Contracts
+
+| Contract | Address |
+|----------|---------|
+| Uniswap V3 OP/WETH Pool (0.3%) | [`0x68f5c0a2de713a54991e01858fd27a3832401849`](https://optimistic.etherscan.io/address/0x68f5c0a2de713a54991e01858fd27a3832401849) |
+| OP Token | [`0x4200000000000000000000000000000000000042`](https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000042) |
+| WETH | [`0x4200000000000000000000000000000000000006`](https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000006) |
+
+### Notes
+
+- V3 concentrated liquidity requires consideration of position ranges and rebalancing
+- For simplicity, analysis may assume wide/full-range positions where applicable
