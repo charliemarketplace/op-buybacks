@@ -1,1 +1,0 @@
-# Buyback and LP strategies
