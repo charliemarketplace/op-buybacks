@@ -7,16 +7,17 @@ Deposit tx fees into a single wide-range Uniswap V3 LP position.
 Track liquidity accumulation and fee compounding over time.
 
 Assumptions:
-- Free swapping to match token ratio for deposits
-- Wide range that stays in-range throughout the period
+- Free swapping to match token ratio for deposits (at current sqrtPriceX96)
+- Wide range (90000-94980 ticks) that stays in-range throughout the period
 - Fees compound daily into next day's budget
 
 For each day:
 1. Budget = previous day's tx fees + previous day's earned LP fees
-2. Calculate token split needed for the range at current price
-3. Add liquidity to position
-4. Calculate fee share = our_liquidity / total_pool_liquidity
-5. Earn fees proportionally from pool trading fees
+2. Get current sqrtPriceX96 from last swap of previous day
+3. Calculate token split needed for the range using match_tokens_to_range
+4. Add liquidity to position
+5. Calculate fee share = our_liquidity / total_pool_liquidity
+6. Earn fees proportionally from pool trading fees
 """
 
 import sys
@@ -26,18 +27,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd
 import numpy as np
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass
+from typing import List, Optional
 
 from uniswap import (
     tick_to_price,
-    get_closest_tick,
     sqrtpx96_to_price,
     price_to_sqrtpx96,
     get_liquidity,
     get_position_balance,
     match_tokens_to_range,
 )
+
+
+# Tick spacing for 0.3% pool is 60
+TICK_LOWER = 90000  # 90000 % 60 = 0 ✓
+TICK_UPPER = 94980  # 94980 % 60 = 0 ✓
 
 
 @dataclass
@@ -56,9 +61,11 @@ class LPPosition:
 class DailyLPResult:
     """Result from a single day's LP activity."""
     date: str
+    sqrtpx96: str
+    price_op_per_eth: float
     budget_eth: float
     eth_deposited: float
-    op_deposited: float  # From "free swap"
+    op_deposited: float
     liquidity_added: int
     cumulative_liquidity: int
     pool_liquidity: int
@@ -85,30 +92,34 @@ def load_data(project_root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
     return hourly, fees, swaps
 
 
+def get_end_of_day_sqrtpx96(swaps: pd.DataFrame, date) -> Optional[str]:
+    """Get the sqrtPriceX96 from the last swap of a given day."""
+    day_swaps = swaps[swaps["date"] == date].sort_values("BLOCK_TIMESTAMP")
+    if len(day_swaps) == 0:
+        return None
+    return str(day_swaps.iloc[-1]["SQRTPRICEX96"])
+
+
 def get_daily_pool_stats(hourly: pd.DataFrame, swaps: pd.DataFrame) -> pd.DataFrame:
     """
     Aggregate pool stats to daily level.
 
     Returns DataFrame with:
     - date
-    - avg_price: average OP/ETH price
     - pool_fees_eth: total ETH fees earned by pool
     - pool_fees_op: total OP fees earned by pool
     - avg_liquidity: average active liquidity
     """
-    # Daily price from hourly (use VWAP or simple average of close)
-    daily_price = hourly.groupby("date").agg(
-        avg_price=("close", "mean"),
+    daily_fees = hourly.groupby("date").agg(
         pool_fees_eth=("eth_fees", "sum"),
         pool_fees_op=("op_fees", "sum"),
     ).reset_index()
 
-    # Average liquidity from swaps
     daily_liq = swaps.groupby("date").agg(
         avg_liquidity=("LIQUIDITY", "mean"),
     ).reset_index()
 
-    daily = daily_price.merge(daily_liq, on="date", how="left")
+    daily = daily_fees.merge(daily_liq, on="date", how="left")
     daily["avg_liquidity"] = daily["avg_liquidity"].fillna(daily["avg_liquidity"].mean())
 
     return daily
@@ -116,62 +127,90 @@ def get_daily_pool_stats(hourly: pd.DataFrame, swaps: pd.DataFrame) -> pd.DataFr
 
 def calculate_deposit(
     budget_eth: float,
-    current_price: float,
+    sqrtpx96: str,
     tick_lower: int,
     tick_upper: int,
 ) -> tuple[float, float, int]:
     """
     Calculate how to split ETH budget for LP deposit.
 
-    Uses "free swap" assumption - converts some ETH to OP at current price
-    to match the required ratio for the range.
+    Given:
+    - budget_eth: total ETH available
+    - sqrtpx96: current pool price
+    - tick range for the position
+
+    We need to split budget into:
+    - eth_deposit: ETH to deposit directly
+    - eth_swap: ETH to swap for OP at current price
+
+    Uses match_tokens_to_range to find the required ratio.
 
     Returns:
-        (eth_to_deposit, op_to_deposit, liquidity_added)
+        (eth_deposited, op_deposited, liquidity_added)
     """
     if budget_eth <= 0:
-        return 0, 0, 0
+        return 0.0, 0.0, 0
 
-    # Get sqrtPriceX96 for current price
-    # decimal_adjustment = 1 for same-decimal tokens
-    sqrtpx96 = price_to_sqrtpx96(current_price, invert=False, decimal_adjustment=1)
+    sqrtpx96_int = int(float(sqrtpx96))
 
-    # Try depositing all ETH first, see how much OP needed
-    result = match_tokens_to_range(
-        x=budget_eth,  # ETH (token0)
-        y=None,  # Calculate OP needed
-        sqrtpx96=sqrtpx96,
-        decimal_x=1e18,
-        decimal_y=1e18,
-        tick_lower=tick_lower,
-        tick_upper=tick_upper,
-    )
+    # Current price in OP/ETH
+    price = sqrtpx96_to_price(sqrtpx96_int, invert=False, decimal_adjustment=1)
 
-    op_needed = result["amount_y"]
+    # Find the ratio: how much OP do we need per 1 ETH deposited?
+    # Use match_tokens_to_range with x=1 to get the ratio
+    try:
+        ratio_result = match_tokens_to_range(
+            x=1.0,  # 1 ETH
+            y=None,  # Calculate OP needed
+            sqrtpx96=sqrtpx96_int,
+            decimal_x=1e18,
+            decimal_y=1e18,
+            tick_lower=tick_lower,
+            tick_upper=tick_upper,
+        )
+        op_per_eth = ratio_result["amount_y"]
+    except Exception:
+        # If price is outside range or other error, handle gracefully
+        op_per_eth = None
 
-    if op_needed is None or op_needed <= 0:
-        # Price might be outside range, deposit as single-sided
-        # For simplicity, just use all ETH
-        op_needed = 0
+    if op_per_eth is None or op_per_eth <= 0 or not np.isfinite(op_per_eth):
+        # Price might be outside range - deposit single-sided
+        # If price is below range, deposit all as ETH
+        # If price is above range, convert all to OP
+        price_lower = tick_to_price(tick_lower, decimal_adjustment=1, yx=True)
+        price_upper = tick_to_price(tick_upper, decimal_adjustment=1, yx=True)
 
-    # Cost of OP in ETH terms
-    eth_for_op = op_needed / current_price if current_price > 0 else 0
-
-    if eth_for_op > budget_eth:
-        # Not enough ETH to match, scale down
-        scale = budget_eth / (budget_eth + eth_for_op) if eth_for_op > 0 else 1
-        eth_to_deposit = budget_eth * scale
-        op_to_deposit = (budget_eth - eth_to_deposit) * current_price
+        if price <= price_lower:
+            # All ETH (price below range)
+            eth_deposited = budget_eth
+            op_deposited = 0.0
+        elif price >= price_upper:
+            # All OP (price above range)
+            eth_deposited = 0.0
+            op_deposited = budget_eth * price
+        else:
+            # Shouldn't happen, but fallback
+            eth_deposited = budget_eth / 2
+            op_deposited = (budget_eth / 2) * price
     else:
-        eth_to_deposit = budget_eth - eth_for_op
-        op_to_deposit = op_needed
+        # Normal case: price is in range
+        # We need op_per_eth OP for each ETH deposited
+        # Cost of that OP in ETH = op_per_eth / price
+        # Total ETH needed = eth_deposit + (eth_deposit * op_per_eth / price)
+        #                  = eth_deposit * (1 + op_per_eth / price)
+        # So: eth_deposit = budget / (1 + op_per_eth / price)
+
+        eth_deposit = budget_eth / (1 + op_per_eth / price)
+        eth_swap = budget_eth - eth_deposit
+        op_deposited = eth_swap * price
+        eth_deposited = eth_deposit
 
     # Calculate liquidity from deposit
-    if eth_to_deposit > 0 or op_to_deposit > 0:
+    if eth_deposited > 0 or op_deposited > 0:
         liquidity = get_liquidity(
-            x=eth_to_deposit,
-            y=op_to_deposit,
-            sqrtpx96=sqrtpx96,
+            x=eth_deposited,
+            y=op_deposited,
+            sqrtpx96=sqrtpx96_int,
             decimal_x=1e18,
             decimal_y=1e18,
             tick_lower=tick_lower,
@@ -180,15 +219,15 @@ def calculate_deposit(
     else:
         liquidity = 0
 
-    return eth_to_deposit, op_to_deposit, liquidity
+    return eth_deposited, op_deposited, liquidity
 
 
 def run_lp_simulation(
     hourly: pd.DataFrame,
     fees: pd.DataFrame,
     swaps: pd.DataFrame,
-    tick_lower: int = 90000,
-    tick_upper: int = 94000,
+    tick_lower: int = TICK_LOWER,
+    tick_upper: int = TICK_UPPER,
 ) -> tuple[LPPosition, List[DailyLPResult]]:
     """
     Run LP simulation over the entire period.
@@ -202,37 +241,45 @@ def run_lp_simulation(
     position = LPPosition(tick_lower=tick_lower, tick_upper=tick_upper)
     daily_results = []
 
-    pending_fees_eth = 0  # Fees earned yesterday, added to today's budget
-    pending_fees_op = 0
+    pending_fees_eth = 0.0
+    pending_fees_op = 0.0
 
     for i, date in enumerate(dates):
         if i == 0:
-            # No budget for first day
+            # No budget for first day (no T-1 fees)
             continue
 
         # Budget from previous day's tx fees
         prev_date = dates[i - 1]
         tx_fees_eth = fees[fees["block_date"] == prev_date]["fees_eth"].values[0]
 
-        # Total budget = tx fees + earned LP fees (converted to ETH equivalent)
-        # For simplicity, treat OP fees as already converted at avg price
+        # Get sqrtPriceX96 from end of previous day (the price we'd see at start of today)
+        sqrtpx96 = get_end_of_day_sqrtpx96(swaps, prev_date)
+        if sqrtpx96 is None:
+            # No swaps on previous day, try to get from current day's first swap
+            sqrtpx96 = get_end_of_day_sqrtpx96(swaps, date)
+            if sqrtpx96 is None:
+                continue
+
+        price = sqrtpx96_to_price(int(float(sqrtpx96)), invert=False, decimal_adjustment=1)
+
+        # Pool stats for today
         pool_data = daily_pool[daily_pool["date"] == date]
         if len(pool_data) == 0:
             continue
 
-        current_price = pool_data["avg_price"].values[0]
         pool_fees_eth = pool_data["pool_fees_eth"].values[0]
         pool_fees_op = pool_data["pool_fees_op"].values[0]
         pool_liquidity = int(pool_data["avg_liquidity"].values[0])
 
         # Convert pending OP fees to ETH equivalent for budget
-        pending_fees_eth_equiv = pending_fees_eth + (pending_fees_op / current_price if current_price > 0 else 0)
+        pending_fees_eth_equiv = pending_fees_eth + (pending_fees_op / price if price > 0 else 0)
         budget_eth = tx_fees_eth + pending_fees_eth_equiv
 
         # Calculate deposit
         eth_deposited, op_deposited, liquidity_added = calculate_deposit(
             budget_eth=budget_eth,
-            current_price=current_price,
+            sqrtpx96=sqrtpx96,
             tick_lower=tick_lower,
             tick_upper=tick_upper,
         )
@@ -243,13 +290,12 @@ def run_lp_simulation(
         position.total_op_deposited += op_deposited
 
         # Calculate fee share
-        # Our share of pool = our_liquidity / pool_liquidity
         if pool_liquidity > 0 and position.liquidity > 0:
             liquidity_share = position.liquidity / pool_liquidity
         else:
             liquidity_share = 0
 
-        # Fees earned today (will be added to tomorrow's budget)
+        # Fees earned today
         fees_earned_eth = pool_fees_eth * liquidity_share
         fees_earned_op = pool_fees_op * liquidity_share
 
@@ -262,6 +308,8 @@ def run_lp_simulation(
 
         daily_results.append(DailyLPResult(
             date=str(date),
+            sqrtpx96=sqrtpx96,
+            price_op_per_eth=price,
             budget_eth=budget_eth,
             eth_deposited=eth_deposited,
             op_deposited=op_deposited,
@@ -284,14 +332,12 @@ def main():
     print("Loading data...")
     hourly, fees, swaps = load_data(project_root)
 
-    # Define wide range
-    tick_lower = 90000
-    tick_upper = 94000
-    price_lower = tick_to_price(tick_lower, decimal_adjustment=1, yx=True)
-    price_upper = tick_to_price(tick_upper, decimal_adjustment=1, yx=True)
+    # Range info
+    price_lower = tick_to_price(TICK_LOWER, decimal_adjustment=1, yx=True)
+    price_upper = tick_to_price(TICK_UPPER, decimal_adjustment=1, yx=True)
 
-    print(f"\nLP Range:")
-    print(f"  Ticks: {tick_lower} to {tick_upper}")
+    print(f"\nLP Range (tick spacing = 60 for 0.3% pool):")
+    print(f"  Ticks: {TICK_LOWER} to {TICK_UPPER}")
     print(f"  Prices: {price_lower:.2f} to {price_upper:.2f} OP/ETH")
 
     print("\nRunning LP simulation...")
@@ -299,8 +345,8 @@ def main():
         hourly=hourly,
         fees=fees,
         swaps=swaps,
-        tick_lower=tick_lower,
-        tick_upper=tick_upper,
+        tick_lower=TICK_LOWER,
+        tick_upper=TICK_UPPER,
     )
 
     # Summary
@@ -319,34 +365,36 @@ def main():
     print(f"\nFinal Position:")
     print(f"  Liquidity: {position.liquidity:,}")
 
-    # Get final position value
+    # Get final position value using last day's end price
     if daily_results:
-        # Use last day's pool data
-        daily_pool = get_daily_pool_stats(hourly, swaps)
-        last_date = pd.to_datetime(daily_results[-1].date).date()
-        final_price_data = daily_pool[daily_pool["date"] == last_date]
-        if len(final_price_data) > 0:
-            final_price = final_price_data["avg_price"].values[0]
+        last_result = daily_results[-1]
+        final_sqrtpx96 = int(float(last_result.sqrtpx96))
+        final_price = last_result.price_op_per_eth
 
-            # Calculate position value at final price
-            sqrtpx96 = price_to_sqrtpx96(final_price, invert=False, decimal_adjustment=1)
-            balance = get_position_balance(
-                position_l=position.liquidity,
-                sqrtpx96=sqrtpx96,
-                tick_lower=tick_lower,
-                tick_upper=tick_upper,
-                decimal_x=1e18,
-                decimal_y=1e18,
-            )
+        # Get actual end-of-month price
+        dates = sorted(swaps["date"].unique())
+        final_sqrtpx96_str = get_end_of_day_sqrtpx96(swaps, dates[-1])
+        if final_sqrtpx96_str:
+            final_sqrtpx96 = int(float(final_sqrtpx96_str))
+            final_price = sqrtpx96_to_price(final_sqrtpx96, invert=False, decimal_adjustment=1)
 
-            print(f"\nPosition Value at Final Price ({final_price:.2f} OP/ETH):")
-            print(f"  ETH in position: {balance['token0']:.4f}")
-            print(f"  OP in position:  {balance['token1']:,.2f}")
+        balance = get_position_balance(
+            position_l=position.liquidity,
+            sqrtpx96=final_sqrtpx96,
+            tick_lower=TICK_LOWER,
+            tick_upper=TICK_UPPER,
+            decimal_x=1e18,
+            decimal_y=1e18,
+        )
 
-            # Total OP equivalent
-            total_op_equiv = balance["token1"] + (balance["token0"] * final_price)
-            total_op_equiv += position.total_fees_earned_op + (position.total_fees_earned_eth * final_price)
-            print(f"\nTotal OP Equivalent (position + fees): {total_op_equiv:,.2f}")
+        print(f"\nPosition Value at Final Price ({final_price:.2f} OP/ETH):")
+        print(f"  ETH in position: {balance['token0']:.4f}")
+        print(f"  OP in position:  {balance['token1']:,.2f}")
+
+        # Total OP equivalent
+        total_op_equiv = balance["token1"] + (balance["token0"] * final_price)
+        total_op_equiv += position.total_fees_earned_op + (position.total_fees_earned_eth * final_price)
+        print(f"\nTotal OP Equivalent (position + fees): {total_op_equiv:,.2f}")
 
     # Save daily results
     daily_df = pd.DataFrame([vars(r) for r in daily_results])
@@ -358,7 +406,7 @@ def main():
     print("\n" + "=" * 60)
     print("DAILY BREAKDOWN")
     print("=" * 60)
-    print(daily_df[["date", "budget_eth", "eth_deposited", "op_deposited",
+    print(daily_df[["date", "price_op_per_eth", "budget_eth", "eth_deposited", "op_deposited",
                     "liquidity_share", "fees_earned_eth", "fees_earned_op"]].to_string(index=False))
 
 
