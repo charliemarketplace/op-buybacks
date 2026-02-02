@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OP Buyback Strategy Analysis - January 2026</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/histogram-bellcurve.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations.js"></script>
+    <style>
+        :root {
+            --op-red: #ff0420;
+            --op-red-dark: #cc0318;
+            --op-red-light: rgba(255, 4, 32, 0.1);
+            --eth-blue: #627eea;
+            --bg-gray: #f5f5f5;
+            --bg-white: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --border-color: #e5e5e5;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar TOC */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-white);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            background: linear-gradient(135deg, var(--op-red) 0%, var(--op-red-dark) 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .toc {
+            padding: 16px 0;
+        }
+
+        .toc-section {
+            padding: 8px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-top: 12px;
+        }
+
+        .toc-link {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .toc-link:hover {
+            background: var(--op-red-light);
+            color: var(--op-red);
+            border-left-color: var(--op-red);
+        }
+
+        .toc-link.active {
+            background: var(--op-red-light);
+            color: var(--op-red);
+            border-left-color: var(--op-red);
+            font-weight: 500;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: 280px;
+            padding: 40px 60px;
+            max-width: 1200px;
+        }
+
+        .page-header {
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .page-title span {
+            color: var(--op-red);
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .page-meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        section {
+            margin-bottom: 48px;
+            scroll-margin-top: 24px;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--op-red);
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 16px 0;
+        }
+
+        h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--op-red);
+            margin: 20px 0 12px 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-box {
+            background: var(--op-red-light);
+            border-left: 4px solid var(--op-red);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+            color: var(--op-red-dark);
+        }
+
+        /* Chart containers */
+        .chart-container {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            margin: 24px 0;
+        }
+
+        .chart-header {
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--op-red) 0%, var(--op-red-dark) 100%);
+            color: white;
+        }
+
+        .chart-header-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chart-header-desc {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 450px;
+            padding: 20px;
+        }
+
+        .chart-small {
+            height: 350px;
+        }
+
+        /* Stats boxes */
+        .stats-box {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px 20px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--op-red);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Summary stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--op-red);
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--op-red);
+        }
+
+        .stat-card .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .stat-card.eth {
+            border-top-color: var(--eth-blue);
+        }
+
+        .stat-card.eth .stat-value {
+            color: var(--eth-blue);
+        }
+
+        /* LP summary grid */
+        .lp-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .lp-summary-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .lp-summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--op-red);
+        }
+
+        .lp-summary-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Comparison table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background: var(--bg-white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .comparison-table th {
+            background: var(--op-red);
+            color: white;
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--op-red-light);
+        }
+
+        .comparison-table .winner {
+            background: rgba(0, 200, 83, 0.1);
+            color: #00a854;
+            font-weight: 600;
+        }
+
+        /* Trade-offs */
+        .tradeoffs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .tradeoff-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .tradeoff-card.pros {
+            border-top: 4px solid #00a854;
+        }
+
+        .tradeoff-card.cons {
+            border-top: 4px solid #fa8c16;
+        }
+
+        .tradeoff-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tradeoff-card.pros .tradeoff-title {
+            color: #00a854;
+        }
+
+        .tradeoff-card.cons .tradeoff-title {
+            color: #fa8c16;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--bg-white);
+            border-radius: 12px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: var(--op-red);
+            text-decoration: none;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 240px; }
+            .main { margin-left: 240px; padding: 32px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 20px; }
+            .tradeoffs { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar TOC -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">OP Buybacks</div>
+                <div class="sidebar-subtitle">Strategy Analysis Report</div>
+            </div>
+            <nav class="toc">
+                <div class="toc-section">Overview</div>
+                <a href="#intro" class="toc-link">Introduction</a>
+                <a href="#assumptions" class="toc-link">Simplifying Assumptions</a>
+
+                <div class="toc-section">Process & Strategy</div>
+                <a href="#data-processing" class="toc-link">Data Processing</a>
+                <a href="#strategy-1" class="toc-link">Strategy 1: Monte Carlo</a>
+                <a href="#strategy-2" class="toc-link">Strategy 2: Simple Wide LP</a>
+
+                <div class="toc-section">Results</div>
+                <a href="#chart-fees" class="toc-link">Daily Transaction Fees</a>
+                <a href="#chart-monte-carlo" class="toc-link">Monte Carlo Distribution</a>
+                <a href="#chart-lp" class="toc-link">LP Strategy Performance</a>
+                <a href="#summary" class="toc-link">Summary & Comparison</a>
+
+                <div class="toc-section">Conclusion</div>
+                <a href="#tradeoffs" class="toc-link">Trade-offs</a>
+                <a href="#conclusion" class="toc-link">Final Thoughts</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <header class="page-header">
+                <h1 class="page-title"><span>OP</span> Buyback Strategy Analysis</h1>
+                <p class="page-subtitle">Comparing Monte Carlo Random Purchases vs. Simple Wide LP Positions</p>
+                <div class="page-meta">
+                    <span>January 2026</span>
+                    <span>OP Mainnet Data</span>
+                    <span>1,000 Simulations</span>
+                </div>
+            </header>
+
+            <!-- Introduction -->
+            <section id="intro">
+                <h2>Introduction</h2>
+                <p>This report analyzes two potential strategies for accumulating OP tokens using protocol transaction fee revenue. We compare a naive Dollar-Cost Averaging (DCA) approach via random market purchases against a passive liquidity provision strategy on Uniswap V3.</p>
+                <p>The goal is to understand which approach yields more OP tokens over a 30-day simulation period, accounting for execution timing variance and LP fee income.</p>
+            </section>
+
+            <!-- Simplifying Assumptions -->
+            <section id="assumptions">
+                <h2>Simplifying Assumptions</h2>
+                <div class="info-box">
+                    <p>The actual buyback proposal allocates 50% of Superchain sequencer revenue (OP Mainnet + Base + Unichain + other OP Stack chains). For simplicity, this analysis uses <strong>100% of OP Mainnet transaction fees only</strong>, ignoring other Superchain revenue. This keeps the data simple while still demonstrating the strategy comparison.</p>
+                </div>
+            </section>
+
+            <!-- Data Processing -->
+            <section id="data-processing">
+                <h2>Process & Strategy</h2>
+
+                <h3>Data Processing</h3>
+                <div class="card">
+                    <p><strong>Script:</strong> <code>01_processing.py</code></p>
+                    <p><strong>Input:</strong> Raw swap data (<code>opweth03-swaps-jan2026.csv</code>) with sqrtPriceX96, amounts, timestamps</p>
+                    <p><strong>Output:</strong> Hourly OHLCV data (<code>hourly_ohlcv.csv</code>) with:</p>
+                    <ul>
+                        <li>OHLC prices (OP per ETH) derived from sqrtPriceX96</li>
+                        <li>Buy/sell volumes for OP and ETH</li>
+                        <li>LP fees earned (0.3% of sold amounts)</li>
+                        <li>VWAP (volume-weighted average price) per hour</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Strategy 1 -->
+            <section id="strategy-1">
+                <h3>Strategy 1: Monte Carlo Random Purchases</h3>
+                <div class="card">
+                    <p><strong>Script:</strong> <code>02_monte_carlo_buys.py</code></p>
+                    <p>Simulates a naive DCA approach where the protocol buys OP at random times:</p>
+                    <ul>
+                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees (in ETH)</li>
+                        <li><strong>Execution:</strong> Randomly select 1-10 purchase times each day</li>
+                        <li><strong>Price Sampling:</strong> Execute buys at prices sampled uniformly from each hour's low-high range</li>
+                        <li><strong>Simulations:</strong> 1,000 runs to capture distribution of outcomes</li>
+                    </ul>
+                    <p>This represents a simple "just buy OP" strategy with no attempt at market timing.</p>
+                </div>
+            </section>
+
+            <!-- Strategy 2 -->
+            <section id="strategy-2">
+                <h3>Strategy 2: Simple Wide LP</h3>
+                <div class="card">
+                    <p><strong>Script:</strong> <code>03_simple_lp.py</code></p>
+                    <p>Instead of buying OP directly, deposit fees into a Uniswap V3 LP position:</p>
+                    <ul>
+                        <li><strong>Tick Range:</strong> 90000 to 94980 (~8,099 to ~13,327 OP/ETH) - a wide range capturing likely price movement</li>
+                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees + Day T-1 earned LP fees (compounding)</li>
+                        <li><strong>Token Split:</strong> Split ETH budget into ETH + OP at the required ratio using <code>match_tokens_to_range()</code></li>
+                        <li><strong>Liquidity:</strong> Add liquidity to the position using <code>get_liquidity()</code></li>
+                        <li><strong>Fee Calculation:</strong> Per-swap: <code>our_share = our_liquidity / (pool_liquidity + our_liquidity)</code></li>
+                    </ul>
+
+                    <h4>Key Uniswap Functions Used</h4>
+                    <ul>
+                        <li><code>sqrtpx96_to_price()</code> - Convert on-chain price format to human-readable OP/ETH</li>
+                        <li><code>match_tokens_to_range()</code> - Determine ETH/OP split needed for a given tick range</li>
+                        <li><code>get_liquidity()</code> - Calculate liquidity units from token deposits</li>
+                        <li><code>get_position_balance()</code> - Get current ETH and OP in the position at any price</li>
+                        <li><code>tick_to_price()</code> - Check if swap prices fall within our LP range</li>
+                    </ul>
+                    <p>Final position value is converted to OP-equivalent by pricing the ETH component at end-of-period price.</p>
+                </div>
+            </section>
+
+            <!-- Chart: Daily TX Fees -->
+            <section id="chart-fees">
+                <h2>Results</h2>
+
+                <h3>Daily Transaction Fees</h3>
+                <p>Shows daily OP Mainnet transaction fees for January 2026. Note the T-1 rule: Day T's budget equals Day T-1's fees, creating a 1-day lag.</p>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-header-title">Daily OP Mainnet Transaction Fees (January 2026)</div>
+                        <div class="chart-header-desc">Jan 1 (grey): No T-1 data available | Jan 31 (red): Outlier day (~7 ETH vs typical ~0.7 ETH), excluded</div>
+                    </div>
+                    <div id="chart-daily-fees" class="chart"></div>
+                </div>
+            </section>
+
+            <!-- Chart: Monte Carlo -->
+            <section id="chart-monte-carlo">
+                <h3>Monte Carlo Simulation Distribution</h3>
+                <p>Histogram showing the distribution of total OP accumulated across 1,000 simulations. The tight distribution demonstrates that random timing within each day has minimal impact on outcomes.</p>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-header-title">Monte Carlo Simulation: OP Accumulated Distribution</div>
+                        <div class="chart-header-desc">1,000 simulations of random daily purchases using T-1 transaction fees</div>
+                    </div>
+                    <div id="chart-monte-carlo" class="chart"></div>
+                    <div class="stats-box" id="mc-stats"></div>
+                </div>
+            </section>
+
+            <!-- Chart: LP Strategy -->
+            <section id="chart-lp">
+                <h3>LP Strategy Performance</h3>
+                <p>Three charts showing LP strategy metrics: daily fees earned, cumulative fees (compounding effect), and our position's share of total pool liquidity over time.</p>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-header-title">Simple LP Strategy Results</div>
+                        <div class="chart-header-desc">Daily fees, cumulative compounding, and liquidity share analysis</div>
+                    </div>
+                    <div class="lp-summary-grid" id="lp-summary"></div>
+                    <div id="chart-lp-fees" class="chart chart-small"></div>
+                    <div id="chart-lp-cumulative" class="chart chart-small"></div>
+                    <div id="chart-lp-liquidity" class="chart chart-small"></div>
+                </div>
+            </section>
+
+            <!-- Summary -->
+            <section id="summary">
+                <h3>Summary Comparison</h3>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">~218,923</div>
+                        <div class="stat-label">Monte Carlo Mean OP</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">~232,617</div>
+                        <div class="stat-label">Simple LP OP-equivalent</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">+6%</div>
+                        <div class="stat-label">LP Advantage</div>
+                    </div>
+                    <div class="stat-card eth">
+                        <div class="stat-value">0.17 ETH</div>
+                        <div class="stat-label">LP Fees Earned (ETH)</div>
+                    </div>
+                </div>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Monte Carlo</th>
+                            <th>Simple LP</th>
+                            <th>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>OP Accumulated</td>
+                            <td>~218,923 OP (mean)</td>
+                            <td>~232,617 OP-equiv</td>
+                            <td class="winner">LP (+6%)</td>
+                        </tr>
+                        <tr>
+                            <td>Fee Income</td>
+                            <td>None</td>
+                            <td>1,738 OP + 0.17 ETH</td>
+                            <td class="winner">LP</td>
+                        </tr>
+                        <tr>
+                            <td>Complexity</td>
+                            <td>Simple swaps</td>
+                            <td>Position management</td>
+                            <td>Monte Carlo</td>
+                        </tr>
+                        <tr>
+                            <td>Risk Profile</td>
+                            <td>Market timing only</td>
+                            <td>IL + range risk</td>
+                            <td>Depends</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>The LP strategy benefits from:</p>
+                <ol>
+                    <li><strong>Fee income:</strong> Earns ~1,738 OP + 0.17 ETH in trading fees</li>
+                    <li><strong>Compounding:</strong> Daily fees roll into the next day's deposit, growing the position faster</li>
+                    <li><strong>Diversification:</strong> Maintains exposure to both ETH and OP</li>
+                </ol>
+            </section>
+
+            <!-- Trade-offs -->
+            <section id="tradeoffs">
+                <h2>Trade-offs</h2>
+
+                <div class="tradeoffs">
+                    <div class="tradeoff-card pros">
+                        <div class="tradeoff-title">LP Advantages</div>
+                        <ul>
+                            <li>Passive fee income from trading activity</li>
+                            <li>Compounding effect over time</li>
+                            <li>Dual-asset exposure (ETH + OP)</li>
+                            <li>6% higher returns in this simulation</li>
+                        </ul>
+                    </div>
+                    <div class="tradeoff-card cons">
+                        <div class="tradeoff-title">LP Considerations</div>
+                        <ul>
+                            <li>Impermanent loss risk if price moves outside range</li>
+                            <li>More complex to manage than simple buys</li>
+                            <li>In a strongly trending market, direct buying may outperform</li>
+                            <li>Requires monitoring and potential rebalancing</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Conclusion -->
+            <section id="conclusion">
+                <h2>Conclusion</h2>
+                <div class="card">
+                    <p>Over a 30-day simulation, the fee compounding effect is modest but positive. The Simple Wide LP strategy outperforms Monte Carlo random buys by accumulating approximately <strong>6% more OP-equivalent value</strong>.</p>
+                    <p>Over longer periods or with higher trading volume, the LP advantage would compound further. However, the trade-offs around complexity and impermanent loss risk should be carefully considered based on the protocol's risk tolerance and operational capacity.</p>
+                    <p>The tight distribution in Monte Carlo results (std dev ~282 OP on mean of ~218,923) suggests that execution timing within each day has minimal impact - the real differentiator is the strategy choice itself.</p>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>OP Buyback Strategy Analysis | January 2026 | Data: <a href="https://dune.com" target="_blank">Dune Analytics</a> & <a href="https://flipsidecrypto.xyz" target="_blank">Flipside</a></p>
+                <p style="margin-top: 8px; font-size: 12px;">Generated from CSV data sources | All charts rendered with Highcharts</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // ==================== DATA FROM CSV FILES ====================
+
+        // Daily transaction fees (from op-mainnet-daily-fees-jan2026.csv)
+        const dailyFeesData = [
+        {
+                "date": "2026-01-01",
+                "fees_eth": 0.7169671788
+        },
+        {
+                "date": "2026-01-02",
+                "fees_eth": 0.6686376593
+        },
+        {
+                "date": "2026-01-03",
+                "fees_eth": 0.4449203046
+        },
+        {
+                "date": "2026-01-04",
+                "fees_eth": 0.4841604743
+        },
+        {
+                "date": "2026-01-05",
+                "fees_eth": 0.7603447937
+        },
+        {
+                "date": "2026-01-06",
+                "fees_eth": 0.7771774737
+        },
+        {
+                "date": "2026-01-07",
+                "fees_eth": 0.788044423
+        },
+        {
+                "date": "2026-01-08",
+                "fees_eth": 0.8665736157
+        },
+        {
+                "date": "2026-01-09",
+                "fees_eth": 0.7491881852
+        },
+        {
+                "date": "2026-01-10",
+                "fees_eth": 0.3456982108
+        },
+        {
+                "date": "2026-01-11",
+                "fees_eth": 0.3860781913
+        },
+        {
+                "date": "2026-01-12",
+                "fees_eth": 0.641401605
+        },
+        {
+                "date": "2026-01-13",
+                "fees_eth": 1.1701079303
+        },
+        {
+                "date": "2026-01-14",
+                "fees_eth": 0.7315007829
+        },
+        {
+                "date": "2026-01-15",
+                "fees_eth": 0.6283306522
+        },
+        {
+                "date": "2026-01-16",
+                "fees_eth": 0.5735145731
+        },
+        {
+                "date": "2026-01-17",
+                "fees_eth": 0.5534796538
+        },
+        {
+                "date": "2026-01-18",
+                "fees_eth": 0.5716984451
+        },
+        {
+                "date": "2026-01-19",
+                "fees_eth": 1.1563400467
+        },
+        {
+                "date": "2026-01-20",
+                "fees_eth": 0.985921531
+        },
+        {
+                "date": "2026-01-21",
+                "fees_eth": 1.0617029397
+        },
+        {
+                "date": "2026-01-22",
+                "fees_eth": 0.6792620781
+        },
+        {
+                "date": "2026-01-23",
+                "fees_eth": 0.7063627283
+        },
+        {
+                "date": "2026-01-24",
+                "fees_eth": 0.3477919402
+        },
+        {
+                "date": "2026-01-25",
+                "fees_eth": 0.6736962859
+        },
+        {
+                "date": "2026-01-26",
+                "fees_eth": 0.8043639113
+        },
+        {
+                "date": "2026-01-27",
+                "fees_eth": 0.661421678
+        },
+        {
+                "date": "2026-01-28",
+                "fees_eth": 0.9410304264
+        },
+        {
+                "date": "2026-01-29",
+                "fees_eth": 1.0156425592
+        },
+        {
+                "date": "2026-01-30",
+                "fees_eth": 1.2820100902
+        },
+        {
+                "date": "2026-01-31",
+                "fees_eth": 6.9595283665
+        }
+];
+
+        // Monte Carlo simulation results (from monte_carlo_results.csv)
+        const monteCarloResults = [219527.18, 218514.59, 219148.44, 218875.72, 219055.82, 218955.6, 218662.86, 218576.55, 219101.27, 218747.97, 218694.04, 218752.17, 218960.11, 219100.94, 219206.37, 219381.31, 218686.83, 218737.34, 219254.58, 218981.43, 218437.39, 218708.46, 218732.66, 219345.17, 218961.19, 218910.94, 219183.18, 218610.87, 218807.02, 218757.49, 219108.19, 218848.62, 218615.05, 219042.61, 218748.95, 219204.61, 218743.19, 218937.46, 218687.75, 218859.06, 219050.24, 219034.52, 219091.91, 219303.93, 219118.78, 218383.92, 219380.02, 219226.66, 219129.33, 219202.24, 219181.4, 218933.41, 219025.28, 218778.41, 218748.61, 218847.67, 218954.92, 219166.29, 218622.08, 218960.88, 218225.47, 219261.25, 218327.23, 218590.64, 219110.92, 218898.88, 218556.56, 218888.7, 218552.14, 218861.4, 218404.49, 218505.93, 219077.02, 219060.43, 218792.18, 219075.53, 218867.65, 219220.4, 218926.14, 218962.22, 219414.32, 218745.5, 218776.95, 219247.23, 218982.08, 218567.13, 219175.6, 218880.41, 218924.34, 218813.93, 218814.57, 218503.76, 219006.16, 218576.16, 218763.51, 219192.97, 218955.47, 219167.32, 219297.66, 218967.59, 218679.53, 219090.29, 218564.79, 219130.92, 218729.67, 219256.79, 219528.33, 218906.6, 219639.76, 218675.3, 219130.09, 218911.87, 219497.82, 218766.92, 218860.34, 218920.04, 218934.35, 219339.54, 218624.33, 218740.0, 218648.02, 218489.5, 218587.58, 219201.14, 218843.32, 218961.22, 218795.76, 218852.61, 219501.77, 219786.32, 218593.76, 219036.54, 218133.03, 219256.93, 218539.75, 218843.79, 219116.1, 218533.92, 218652.79, 219019.9, 218936.49, 218928.92, 219334.86, 219113.25, 218342.5, 219034.78, 218545.47, 219084.22, 218848.24, 218819.09, 218998.85, 219134.29, 218846.46, 219321.1, 219251.48, 218965.5, 218756.92, 219428.74, 219240.88, 218758.61, 218653.49, 218730.67, 218732.38, 218803.17, 219015.19, 218997.5, 219326.66, 218712.03, 218666.73, 218424.35, 218991.17, 218880.34, 218158.1, 219331.55, 218943.43, 218979.26, 219107.67, 218663.12, 218816.61, 219025.75, 218391.51, 219611.49, 218979.5, 219365.98, 218525.26, 219158.91, 218632.96, 218800.95, 218847.47, 219334.57, 218859.66, 218857.04, 218988.15, 218830.7, 219359.75, 218621.66, 219022.38, 218789.33, 218678.88, 219252.11, 219189.65, 219209.06, 218904.03, 218638.25, 219408.22, 219181.52, 219001.18, 218946.21, 218960.25, 218779.44, 219066.19, 218902.33, 218727.14, 219171.83, 218694.71, 219253.15, 219056.07, 218754.58, 218856.08, 218775.47, 218568.88, 219258.57, 218628.49, 218793.1, 219024.72, 219583.41, 218706.44, 218949.77, 218519.0, 219093.64, 219047.04, 218741.19, 218980.95, 218532.13, 219132.18, 218500.5, 219528.79, 218681.43, 218665.02, 218328.84, 219111.63, 218995.29, 219063.61, 218614.18, 218899.31, 218961.09, 218927.86, 218681.39, 218605.73, 218444.8, 219029.45, 218841.04, 219585.99, 218702.05, 218403.29, 219108.72, 219029.37, 219492.31, 219050.39, 219372.92, 218872.58, 218796.61, 218667.96, 219080.63, 219339.58, 219153.05, 219214.34, 218918.22, 218934.86, 218914.2, 218913.63, 218687.11, 219306.75, 218943.74, 218842.49, 218739.03, 218676.5, 219390.69, 219025.74, 218727.96, 218804.68, 218765.16, 218751.55, 218781.76, 219159.57, 218894.76, 218523.48, 219219.91, 219021.43, 218775.49, 219267.75, 219173.59, 218945.17, 219330.21, 218679.74, 219018.59, 218466.67, 219014.28, 218519.96, 218927.17, 219490.48, 218714.87, 219313.15, 219278.5, 219125.13, 219088.65, 218612.09, 218410.35, 218651.58, 218737.59, 218713.6, 218784.32, 218958.45, 218819.14, 219260.53, 218721.75, 219278.26, 218892.17, 218947.09, 219069.49, 219197.14, 218170.09, 218889.75, 218815.31, 218420.8, 219035.71, 219024.42, 218747.46, 218280.62, 218597.0, 218500.48, 219279.71, 218801.93, 218947.65, 219223.87, 219180.18, 219036.57, 218813.5, 219069.5, 218942.04, 218606.21, 219292.09, 218799.19, 219114.29, 218516.39, 218918.21, 218725.72, 218309.58, 219371.64, 219010.53, 218722.31, 219189.95, 218383.59, 218882.35, 219243.52, 218309.84, 218468.5, 218992.63, 218949.32, 218630.58, 218444.4, 219118.61, 218951.79, 219061.04, 219077.25, 218824.12, 219118.15, 218862.61, 218900.04, 218662.96, 219104.21, 218870.65, 219007.75, 218748.78, 218677.18, 219053.04, 219284.54, 218799.35, 218902.69, 218777.99, 218958.39, 218987.41, 218653.67, 219086.61, 219019.43, 218338.83, 218751.52, 219222.46, 218352.81, 219254.71, 218794.08, 219127.94, 218883.63, 218730.83, 218613.85, 218954.28, 219272.21, 219135.56, 218574.99, 219383.39, 218818.47, 219561.51, 218597.41, 219055.55, 218260.09, 218950.79, 219053.2, 218389.85, 218799.71, 218504.39, 219343.19, 218610.54, 219063.27, 218646.01, 218866.32, 219402.43, 218945.64, 218632.56, 218749.78, 218950.98, 219172.29, 219026.96, 219356.04, 218894.27, 219035.91, 218921.29, 218807.91, 218647.83, 218970.68, 218845.62, 218777.67, 219590.52, 218708.36, 218847.19, 219058.81, 219403.3, 219051.36, 218669.29, 218997.43, 219533.67, 218937.81, 218470.38, 218959.23, 218657.61, 219265.07, 218982.23, 218269.73, 219222.92, 218610.47, 218835.9, 219250.04, 218894.59, 218778.36, 219319.41, 218582.5, 218758.36, 219070.43, 219099.28, 219240.16, 218621.77, 219462.78, 219205.14, 218901.1, 219031.39, 218530.01, 218724.09, 218640.47, 219445.23, 219390.72, 219112.21, 218844.01, 219087.19, 218760.28, 219152.41, 218670.6, 218766.13, 218906.6, 219086.75, 218594.27, 218985.02, 218951.84, 218822.41, 219262.96, 218963.17, 219648.3, 218633.63, 218957.59, 218852.04, 218674.81, 218656.48, 218851.78, 219234.29, 219220.83, 219069.25, 219129.58, 218964.67, 219103.35, 219018.33, 219544.07, 218922.18, 218845.2, 218570.91, 219057.16, 218495.75, 218735.81, 219503.61, 218796.68, 218601.91, 218897.88, 218815.63, 218820.61, 219099.17, 218922.67, 218992.93, 218836.51, 218647.77, 219026.76, 218997.38, 218633.66, 218895.03, 218296.99, 218832.56, 219051.92, 218668.13, 218673.06, 218986.78, 219167.75, 218632.64, 219078.0, 218768.69, 218538.99, 219250.75, 218870.89, 219084.31, 218679.7, 219090.71, 219420.2, 219207.08, 218951.58, 218917.56, 218673.84, 218989.63, 218721.79, 219508.57, 218127.86, 218834.47, 219116.85, 218750.83, 218719.19, 219169.11, 218844.87, 219249.02, 218667.15, 218228.54, 219244.96, 219079.86, 218906.39, 219247.55, 219146.54, 218968.76, 219561.53, 219223.4, 218566.43, 218397.41, 219370.75, 218493.49, 218573.44, 218746.64, 219234.8, 218613.95, 218668.34, 219115.53, 219017.71, 218602.37, 218766.01, 218317.56, 219381.66, 219332.38, 218924.28, 218915.04, 218643.88, 218684.79, 218953.06, 218803.2, 218984.46, 218770.34, 218507.84, 218742.77, 219135.96, 218668.59, 219370.24, 218503.93, 218370.52, 219068.98, 218817.77, 219355.08, 219251.37, 219309.07, 219596.54, 218612.34, 219100.91, 219381.63, 218459.67, 218960.17, 218929.11, 219244.96, 218795.19, 219100.26, 218741.85, 219006.96, 219428.96, 219064.38, 219004.76, 219122.69, 219282.49, 218672.34, 219037.85, 218705.22, 218804.0, 218692.32, 219294.41, 218586.02, 218790.12, 219335.09, 218680.14, 219249.76, 219101.31, 219097.74, 219076.36, 219018.45, 218697.99, 219025.06, 218899.75, 218556.68, 219265.79, 219574.39, 218794.52, 219145.95, 218925.62, 219127.65, 219056.95, 219077.03, 219244.57, 218933.17, 218956.37, 219269.38, 219033.76, 219413.5, 218756.06, 219105.46, 218724.89, 218496.23, 219035.89, 218481.93, 218832.67, 218703.86, 219221.47, 219173.89, 219042.25, 219130.3, 219404.45, 218500.94, 219051.7, 218742.24, 218880.65, 218402.41, 218906.74, 218762.33, 218897.29, 218848.33, 218982.07, 218522.98, 218487.78, 218612.96, 218876.21, 218875.93, 219340.43, 218453.3, 218944.2, 218562.1, 219225.06, 218566.23, 219007.32, 218999.88, 218855.4, 218828.88, 218462.49, 219034.8, 219278.8, 219238.2, 218869.96, 219169.21, 219044.76, 219211.18, 219421.28, 219180.12, 218629.85, 219023.86, 218714.1, 218947.11, 218617.48, 218700.91, 218850.7, 218895.3, 218845.15, 219103.58, 219243.05, 219347.03, 219398.23, 218833.58, 218971.42, 218865.74, 219049.95, 219167.12, 218714.6, 218497.65, 219243.31, 218748.01, 219179.5, 218944.02, 218807.34, 218734.58, 218916.45, 218494.78, 219172.95, 218328.73, 218910.09, 219193.11, 218910.45, 218493.3, 218482.45, 218487.75, 219022.74, 219322.6, 218606.02, 218944.66, 219172.53, 218728.93, 218617.59, 218836.07, 219205.39, 218678.36, 219063.88, 219427.04, 218624.88, 218836.98, 219028.67, 219018.26, 218756.42, 218871.67, 219019.09, 219434.25, 218864.13, 218979.06, 218947.26, 218842.11, 219301.29, 219362.16, 218807.35, 218623.17, 219115.58, 218574.74, 219190.03, 218981.0, 218810.95, 218782.65, 218675.08, 219083.61, 218739.91, 219115.72, 219084.24, 219213.31, 218711.68, 218477.29, 219077.48, 219013.46, 218578.19, 218828.5, 218763.44, 218796.98, 219147.09, 219233.2, 218404.12, 218874.92, 218537.94, 218959.12, 218686.02, 219203.37, 218861.92, 219151.2, 218453.68, 218659.18, 218939.68, 218681.1, 218804.89, 219396.45, 218951.64, 219174.44, 218811.59, 218920.29, 218927.39, 219151.55, 218611.07, 218801.14, 218920.53, 219201.08, 219205.54, 218866.49, 218620.28, 218678.84, 219317.5, 218921.01, 218787.27, 218656.56, 218970.67, 219319.08, 218896.81, 219073.43, 218711.19, 218768.53, 219239.94, 218736.06, 218808.53, 219180.38, 219313.12, 218759.36, 218201.48, 218692.53, 218762.85, 218838.55, 219227.79, 219239.46, 218968.54, 219247.24, 219015.04, 219412.63, 219217.95, 218764.38, 218795.86, 219112.38, 218886.09, 219324.86, 219024.4, 218691.06, 218863.24, 219095.84, 218974.27, 218749.47, 218444.44, 219102.32, 218581.73, 219071.0, 219061.02, 218846.47, 219651.85, 218700.34, 218584.88, 218443.19, 218705.98, 218626.16, 219336.74, 219168.22, 218758.19, 218976.84, 219318.06, 218854.46, 218872.94, 218724.32, 218772.99, 218655.34, 218971.71, 218715.57, 219022.14, 218495.64, 219199.23, 219030.31, 219610.84, 218773.48, 218738.43, 219010.29, 219279.04, 219486.95, 219019.14, 218334.8, 219058.96, 218915.29, 218728.17, 218685.07, 218632.82, 218958.04, 219338.24, 219162.18, 218570.31, 219111.21, 218888.34, 218854.69, 218807.49, 218342.21, 218847.9, 219147.27, 218947.93, 218818.84, 219183.46, 219364.46, 218964.73, 218240.95, 218872.81, 219045.58, 219129.46, 219231.2, 218872.34, 219483.31, 219011.51, 218452.62, 218928.12, 219383.62, 219135.0, 218932.51, 219611.54, 218566.94, 218711.32, 219381.63, 219175.32, 219173.92, 218785.67, 219378.37, 219214.93, 218741.5, 219192.84, 218899.78, 219453.35, 218793.35, 218644.27, 219110.87, 218707.53, 219091.7, 219606.28, 219031.3, 218762.08, 219174.37, 218599.02, 218867.26, 219001.91, 219114.86, 218776.57, 219048.12, 218702.89, 219056.49, 218693.38, 219212.8, 218542.74, 219055.96, 218478.57, 218724.54, 219135.29, 218880.73, 218735.75, 219178.89, 218906.12, 219039.24, 218903.2, 218892.09, 218929.62, 219004.62, 218632.01, 219325.1, 219090.56, 218683.63, 218695.42, 218937.05, 218104.63, 219000.86, 218834.44, 218820.3, 218539.52, 218727.27, 218753.36, 218895.02, 218950.92, 218767.57, 218673.4, 218902.91, 218968.94, 219023.1, 219058.11, 218686.24, 218607.3, 218632.05, 218799.03, 218893.47, 219241.63, 219105.48, 219158.98, 218815.82, 219510.08, 219182.05, 219112.55, 218779.08, 218954.64, 219011.43];
+
+        // LP daily results (from lp_daily_results.csv)
+        const lpData = [
+        {
+                "date": "2026-01-02",
+                "fees_eth": 0.000388,
+                "fees_op": 4.43,
+                "cumulative_fees_eth": 0.000388,
+                "cumulative_fees_op": 4.43,
+                "liquidity_share": 0.0182
+        },
+        {
+                "date": "2026-01-03",
+                "fees_eth": 0.000558,
+                "fees_op": 4.01,
+                "cumulative_fees_eth": 0.000945,
+                "cumulative_fees_op": 8.44,
+                "liquidity_share": 0.0358
+        },
+        {
+                "date": "2026-01-04",
+                "fees_eth": 0.000977,
+                "fees_op": 7.16,
+                "cumulative_fees_eth": 0.001922,
+                "cumulative_fees_op": 15.6,
+                "liquidity_share": 0.0399
+        },
+        {
+                "date": "2026-01-05",
+                "fees_eth": 0.001075,
+                "fees_op": 9.99,
+                "cumulative_fees_eth": 0.002998,
+                "cumulative_fees_op": 25.59,
+                "liquidity_share": 0.0523
+        },
+        {
+                "date": "2026-01-06",
+                "fees_eth": 0.001836,
+                "fees_op": 20.89,
+                "cumulative_fees_eth": 0.004833,
+                "cumulative_fees_op": 46.49,
+                "liquidity_share": 0.0711
+        },
+        {
+                "date": "2026-01-07",
+                "fees_eth": 0.002102,
+                "fees_op": 23.05,
+                "cumulative_fees_eth": 0.006935,
+                "cumulative_fees_op": 69.54,
+                "liquidity_share": 0.0825
+        },
+        {
+                "date": "2026-01-08",
+                "fees_eth": 0.00294,
+                "fees_op": 25.99,
+                "cumulative_fees_eth": 0.009876,
+                "cumulative_fees_op": 95.53,
+                "liquidity_share": 0.0977
+        },
+        {
+                "date": "2026-01-09",
+                "fees_eth": 0.00192,
+                "fees_op": 16.36,
+                "cumulative_fees_eth": 0.011795,
+                "cumulative_fees_op": 111.89,
+                "liquidity_share": 0.1209
+        },
+        {
+                "date": "2026-01-10",
+                "fees_eth": 0.002361,
+                "fees_op": 19.96,
+                "cumulative_fees_eth": 0.014156,
+                "cumulative_fees_op": 131.85,
+                "liquidity_share": 0.1623
+        },
+        {
+                "date": "2026-01-11",
+                "fees_eth": 0.001067,
+                "fees_op": 17.65,
+                "cumulative_fees_eth": 0.015223,
+                "cumulative_fees_op": 149.5,
+                "liquidity_share": 0.1527
+        },
+        {
+                "date": "2026-01-12",
+                "fees_eth": 0.003133,
+                "fees_op": 34.74,
+                "cumulative_fees_eth": 0.018357,
+                "cumulative_fees_op": 184.24,
+                "liquidity_share": 0.1514
+        },
+        {
+                "date": "2026-01-13",
+                "fees_eth": 0.012132,
+                "fees_op": 73.15,
+                "cumulative_fees_eth": 0.030488,
+                "cumulative_fees_op": 257.39,
+                "liquidity_share": 0.1916
+        },
+        {
+                "date": "2026-01-14",
+                "fees_eth": 0.002874,
+                "fees_op": 50.04,
+                "cumulative_fees_eth": 0.033362,
+                "cumulative_fees_op": 307.43,
+                "liquidity_share": 0.1813
+        },
+        {
+                "date": "2026-01-15",
+                "fees_eth": 0.004998,
+                "fees_op": 56.17,
+                "cumulative_fees_eth": 0.03836,
+                "cumulative_fees_op": 363.6,
+                "liquidity_share": 0.1552
+        },
+        {
+                "date": "2026-01-16",
+                "fees_eth": 0.004256,
+                "fees_op": 40.58,
+                "cumulative_fees_eth": 0.042616,
+                "cumulative_fees_op": 404.17,
+                "liquidity_share": 0.1526
+        },
+        {
+                "date": "2026-01-17",
+                "fees_eth": 0.005861,
+                "fees_op": 45.3,
+                "cumulative_fees_eth": 0.048477,
+                "cumulative_fees_op": 449.47,
+                "liquidity_share": 0.2053
+        },
+        {
+                "date": "2026-01-18",
+                "fees_eth": 0.004724,
+                "fees_op": 76.71,
+                "cumulative_fees_eth": 0.053202,
+                "cumulative_fees_op": 526.18,
+                "liquidity_share": 0.0325
+        },
+        {
+                "date": "2026-01-19",
+                "fees_eth": 0.01498,
+                "fees_op": 151.46,
+                "cumulative_fees_eth": 0.068182,
+                "cumulative_fees_op": 677.64,
+                "liquidity_share": 0.1795
+        },
+        {
+                "date": "2026-01-20",
+                "fees_eth": 0.012113,
+                "fees_op": 108.66,
+                "cumulative_fees_eth": 0.080296,
+                "cumulative_fees_op": 786.3,
+                "liquidity_share": 0.037
+        },
+        {
+                "date": "2026-01-21",
+                "fees_eth": 0.009827,
+                "fees_op": 83.65,
+                "cumulative_fees_eth": 0.090122,
+                "cumulative_fees_op": 869.95,
+                "liquidity_share": 0.2709
+        },
+        {
+                "date": "2026-01-22",
+                "fees_eth": 0.007548,
+                "fees_op": 67.34,
+                "cumulative_fees_eth": 0.097671,
+                "cumulative_fees_op": 937.29,
+                "liquidity_share": 0.0363
+        },
+        {
+                "date": "2026-01-23",
+                "fees_eth": 0.006686,
+                "fees_op": 68.79,
+                "cumulative_fees_eth": 0.104357,
+                "cumulative_fees_op": 1006.08,
+                "liquidity_share": 0.0378
+        },
+        {
+                "date": "2026-01-24",
+                "fees_eth": 0.001969,
+                "fees_op": 23.11,
+                "cumulative_fees_eth": 0.106326,
+                "cumulative_fees_op": 1029.19,
+                "liquidity_share": 0.0756
+        },
+        {
+                "date": "2026-01-25",
+                "fees_eth": 0.007097,
+                "fees_op": 82.46,
+                "cumulative_fees_eth": 0.113423,
+                "cumulative_fees_op": 1111.65,
+                "liquidity_share": 0.0657
+        },
+        {
+                "date": "2026-01-26",
+                "fees_eth": 0.004622,
+                "fees_op": 44.48,
+                "cumulative_fees_eth": 0.118045,
+                "cumulative_fees_op": 1156.12,
+                "liquidity_share": 0.0644
+        },
+        {
+                "date": "2026-01-27",
+                "fees_eth": 0.004425,
+                "fees_op": 64.96,
+                "cumulative_fees_eth": 0.12247,
+                "cumulative_fees_op": 1221.08,
+                "liquidity_share": 0.0678
+        },
+        {
+                "date": "2026-01-28",
+                "fees_eth": 0.006806,
+                "fees_op": 62.82,
+                "cumulative_fees_eth": 0.129276,
+                "cumulative_fees_op": 1283.9,
+                "liquidity_share": 0.0694
+        },
+        {
+                "date": "2026-01-29",
+                "fees_eth": 0.006444,
+                "fees_op": 129.0,
+                "cumulative_fees_eth": 0.13572,
+                "cumulative_fees_op": 1412.9,
+                "liquidity_share": 0.0774
+        },
+        {
+                "date": "2026-01-30",
+                "fees_eth": 0.009572,
+                "fees_op": 89.39,
+                "cumulative_fees_eth": 0.145293,
+                "cumulative_fees_op": 1502.29,
+                "liquidity_share": 0.0789
+        },
+        {
+                "date": "2026-01-31",
+                "fees_eth": 0.020795,
+                "fees_op": 235.86,
+                "cumulative_fees_eth": 0.166087,
+                "cumulative_fees_op": 1738.15,
+                "liquidity_share": 0.2786
+        }
+];
+
+        // ==================== CHART RENDERING ====================
+
+        // Chart 1: Daily Transaction Fees
+        (function() {
+            const totalFees = dailyFeesData.reduce((sum, d) => sum + d.fees_eth, 0);
+            const usableFees = dailyFeesData.slice(1).reduce((sum, d) => sum + d.fees_eth, 0);
+
+            const chartData = dailyFeesData.map((d, i) => {
+                const isJan1 = i === 0;
+                const isJan31 = i === dailyFeesData.length - 1;
+                return {
+                    x: new Date(d.date).getTime(),
+                    y: d.fees_eth,
+                    color: isJan1 ? '#cccccc' : (isJan31 ? '#ff6b6b' : '#ff0420'),
+                    note: isJan1 ? 'Jan 1: No T-1 data' : (isJan31 ? 'Jan 31: Not used in simulation' : '')
+                };
+            });
+
+            Highcharts.chart('chart-daily-fees', {
+                chart: { type: 'column', zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: null },
+                subtitle: {
+                    text: 'Total: ' + totalFees.toFixed(2) + ' ETH | Usable (T-1 rule): ' + usableFees.toFixed(2) + ' ETH',
+                    style: { fontSize: '14px', color: '#666' }
+                },
+                xAxis: {
+                    type: 'datetime',
+                    labels: { format: '{value:%b %e}' }
+                },
+                yAxis: {
+                    title: { text: 'Transaction Fees (ETH)' },
+                    labels: { format: '{value:.2f}' }
+                },
+                legend: { enabled: false },
+                tooltip: {
+                    headerFormat: '<b>{point.key:%B %e, %Y}</b><br/>',
+                    pointFormat: '{point.y:.4f} ETH<br/>{point.note}'
+                },
+                plotOptions: { column: { borderWidth: 0 } },
+                annotations: [{
+                    labels: [{
+                        point: { x: new Date('2026-01-01').getTime(), y: 0.72, xAxis: 0, yAxis: 0 },
+                        text: 'No T-1 fees',
+                        backgroundColor: '#cccccc',
+                        style: { fontSize: '10px' }
+                    }, {
+                        point: { x: new Date('2026-01-31').getTime(), y: 6.96, xAxis: 0, yAxis: 0 },
+                        text: 'Outlier',
+                        backgroundColor: '#ff6b6b',
+                        style: { fontSize: '10px' }
+                    }],
+                    labelOptions: { borderRadius: 5, padding: 5, y: -15 }
+                }],
+                series: [{ name: 'TX Fees', data: chartData }],
+                credits: { enabled: false }
+            });
+        })();
+
+        // Chart 2: Monte Carlo Histogram
+        (function() {
+            const n = monteCarloResults.length;
+            const mean = monteCarloResults.reduce((a, b) => a + b, 0) / n;
+            const sorted = [...monteCarloResults].sort((a, b) => a - b);
+            const median = sorted[Math.floor(n / 2)];
+            const min = sorted[0];
+            const max = sorted[n - 1];
+            const variance = monteCarloResults.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / n;
+            const stdDev = Math.sqrt(variance);
+
+            document.getElementById('mc-stats').innerHTML =
+                '<div class="stat-item"><div class="stat-value">' + mean.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Mean OP</div></div>' +
+                '<div class="stat-item"><div class="stat-value">' + median.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Median OP</div></div>' +
+                '<div class="stat-item"><div class="stat-value">' + stdDev.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Std Dev</div></div>' +
+                '<div class="stat-item"><div class="stat-value">' + min.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Min OP</div></div>' +
+                '<div class="stat-item"><div class="stat-value">' + max.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Max OP</div></div>';
+
+            Highcharts.chart('chart-monte-carlo', {
+                chart: { type: 'histogram', zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: null },
+                xAxis: [{
+                    title: { text: 'Total OP Accumulated' },
+                    labels: { formatter: function() { return (this.value / 1000).toFixed(0) + 'K'; } },
+                    alignTicks: false
+                }, {
+                    opposite: true,
+                    visible: false
+                }],
+                yAxis: [{
+                    title: { text: 'Frequency (# Simulations)' }
+                }, {
+                    opposite: true,
+                    visible: false
+                }],
+                legend: { enabled: false },
+                tooltip: {
+                    headerFormat: '',
+                    pointFormat: '<b>{point.x:.0f} - {point.x2:.0f} OP</b><br/>Simulations: <b>{point.y}</b>'
+                },
+                plotOptions: {
+                    histogram: {
+                        binsNumber: 30,
+                        color: '#ff0420',
+                        borderWidth: 1,
+                        borderColor: '#cc0318'
+                    }
+                },
+                series: [{
+                    name: 'Histogram',
+                    type: 'histogram',
+                    xAxis: 1,
+                    yAxis: 1,
+                    baseSeries: 's1',
+                    zIndex: -1
+                }, {
+                    name: 'Data',
+                    type: 'scatter',
+                    id: 's1',
+                    data: monteCarloResults,
+                    visible: false,
+                    showInLegend: false
+                }],
+                credits: { enabled: false }
+            });
+        })();
+
+        // Chart 3-5: LP Strategy Charts
+        (function() {
+            const totalFeesETH = lpData[lpData.length - 1].cumulative_fees_eth;
+            const totalFeesOP = lpData[lpData.length - 1].cumulative_fees_op;
+            const medianLiquidityShare = [...lpData].map(d => d.liquidity_share).sort((a,b) => a-b)[Math.floor(lpData.length/2)];
+            const finalPrice = 10467.93;
+            const totalFeesOPEquiv = totalFeesOP + (totalFeesETH * finalPrice);
+
+            document.getElementById('lp-summary').innerHTML =
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesETH.toFixed(4) + '</div><div class="lp-summary-label">Total ETH Fees Earned</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesOP.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Total OP Fees Earned</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesOPEquiv.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Total Fees (OP equiv)</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + (medianLiquidityShare * 100).toFixed(1) + '%</div><div class="lp-summary-label">Median Liquidity Share</div></div>';
+
+            const dates = lpData.map(d => new Date(d.date).getTime());
+            const feesETH = lpData.map((d, i) => [dates[i], d.fees_eth]);
+            const feesOP = lpData.map((d, i) => [dates[i], d.fees_op]);
+            const cumFeesETH = lpData.map((d, i) => [dates[i], d.cumulative_fees_eth]);
+            const cumFeesOP = lpData.map((d, i) => [dates[i], d.cumulative_fees_op]);
+            const liqShare = lpData.map((d, i) => [dates[i], d.liquidity_share * 100]);
+
+            // Daily Fees
+            Highcharts.chart('chart-lp-fees', {
+                chart: { zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: 'Daily LP Fees Earned', style: { fontSize: '16px', fontWeight: 'bold' } },
+                subtitle: { text: 'ETH and OP fees earned from trading activity in our LP range' },
+                xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
+                yAxis: [{
+                    title: { text: 'ETH Fees', style: { color: '#627eea' } },
+                    labels: { format: '{value:.4f}', style: { color: '#627eea' } }
+                }, {
+                    title: { text: 'OP Fees', style: { color: '#ff0420' } },
+                    labels: { format: '{value:.0f}', style: { color: '#ff0420' } },
+                    opposite: true
+                }],
+                tooltip: { shared: true },
+                legend: { enabled: true },
+                series: [{
+                    name: 'ETH Fees',
+                    type: 'column',
+                    data: feesETH,
+                    color: '#627eea',
+                    yAxis: 0
+                }, {
+                    name: 'OP Fees',
+                    type: 'column',
+                    data: feesOP,
+                    color: '#ff0420',
+                    yAxis: 1
+                }],
+                credits: { enabled: false }
+            });
+
+            // Cumulative Fees
+            Highcharts.chart('chart-lp-cumulative', {
+                chart: { zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: 'Cumulative LP Fees Earned', style: { fontSize: '16px', fontWeight: 'bold' } },
+                subtitle: { text: "Shows compounding effect as fees roll into next day's deposits" },
+                xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
+                yAxis: [{
+                    title: { text: 'Cumulative ETH Fees', style: { color: '#627eea' } },
+                    labels: { format: '{value:.3f}', style: { color: '#627eea' } }
+                }, {
+                    title: { text: 'Cumulative OP Fees', style: { color: '#ff0420' } },
+                    labels: { format: '{value:,.0f}', style: { color: '#ff0420' } },
+                    opposite: true
+                }],
+                tooltip: { shared: true },
+                legend: { enabled: true },
+                series: [{
+                    name: 'Cumulative ETH',
+                    type: 'area',
+                    data: cumFeesETH,
+                    color: '#627eea',
+                    fillOpacity: 0.3,
+                    yAxis: 0
+                }, {
+                    name: 'Cumulative OP',
+                    type: 'area',
+                    data: cumFeesOP,
+                    color: '#ff0420',
+                    fillOpacity: 0.3,
+                    yAxis: 1
+                }],
+                credits: { enabled: false }
+            });
+
+            // Liquidity Share
+            Highcharts.chart('chart-lp-liquidity', {
+                chart: { zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: 'Share of Pool Liquidity Over Time', style: { fontSize: '16px', fontWeight: 'bold' } },
+                subtitle: { text: "Our position's share of median active liquidity in the Uniswap V3 pool" },
+                xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
+                yAxis: {
+                    title: { text: 'Liquidity Share (%)' },
+                    labels: { format: '{value:.1f}%' },
+                    max: 30
+                },
+                tooltip: {
+                    headerFormat: '<b>{point.key:%B %e, %Y}</b><br/>',
+                    pointFormat: 'Liquidity Share: <b>{point.y:.2f}%</b>'
+                },
+                legend: { enabled: false },
+                series: [{
+                    name: 'Liquidity Share',
+                    type: 'area',
+                    data: liqShare,
+                    color: '#ff0420',
+                    fillColor: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                        stops: [
+                            [0, 'rgba(255, 4, 32, 0.4)'],
+                            [1, 'rgba(255, 4, 32, 0.05)']
+                        ]
+                    },
+                    lineWidth: 2
+                }],
+                credits: { enabled: false }
+            });
+        })();
+
+        // TOC scroll highlighting
+        (function() {
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').slice(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        document.querySelectorAll('.toc-link').forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section[id]');
+            const tocLinks = document.querySelectorAll('.toc-link');
+
+            function highlightTOC() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (window.scrollY >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', highlightTOC);
+            highlightTOC();
+        })();
+    </script>
+</body>
+</html>
