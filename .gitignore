@@ -152,3 +152,5 @@ eggs/
 *.egg
 .pytest_cache/
 .claude/settings.local.json
+
+viz-design-notes/*
