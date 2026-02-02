@@ -27,6 +27,8 @@ This case study focuses on:
 - **Revenue source**: OP Mainnet transaction fees only (denominated in ETH)
 - **Execution venue**: Uniswap V3 OP/WETH 0.3% pool on OP Mainnet
 
+For simplicity of data collection we use 100% of OP Mainnet fees instead of 50% of total superchain fees. 
+
 ### Contracts
 
 | Contract | Address |
@@ -170,3 +172,5 @@ Deposit fees into a single wide-range LP position. All future deposits go to the
 | Simple Wide LP | ~232,617 OP | +6.3% |
 
 The LP strategy wins by earning trading fees (~1,738 OP + 0.17 ETH) while maintaining diversified exposure to both tokens.
+
+The ETH in the LP position is converted to OP to simplify accounting. See Final Report with visuals for more details.
