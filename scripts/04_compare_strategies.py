@@ -16,6 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd
 
+from uniswap import sqrtpx96_to_price, get_position_balance
+
+# Tick range must match 03_simple_lp.py
+TICK_LOWER = 90000
+TICK_UPPER = 94980
+
 
 def main():
     project_root = Path(__file__).parent.parent
@@ -24,9 +30,13 @@ def main():
     mc_results = pd.read_csv(project_root / "data" / "monte_carlo_results.csv")
     lp_results = pd.read_csv(project_root / "data" / "lp_daily_results.csv")
     fees = pd.read_csv(project_root / "data" / "op-mainnet-daily-fees-jan2026.csv")
+    swaps = pd.read_csv(project_root / "data" / "opweth03-swaps-jan2026.csv")
+    swaps["BLOCK_TIMESTAMP"] = pd.to_datetime(swaps["BLOCK_TIMESTAMP"])
 
-    # Get final price from LP results (end of Jan 31st)
-    final_price = 10467.93  # From LP simulation output - position value price
+    # Get final price from last swap of the period
+    last_swap = swaps.sort_values("BLOCK_TIMESTAMP").iloc[-1]
+    final_sqrtpx96 = int(float(last_swap["SQRTPRICEX96"]))
+    final_price = sqrtpx96_to_price(final_sqrtpx96, invert=False, decimal_adjustment=1)
 
     print("=" * 70)
     print("STRATEGY COMPARISON: January 2026")
@@ -73,10 +83,18 @@ def main():
     print(f"    ETH fees:      {lp_fees_eth:>12.6f} ETH")
     print(f"    OP fees:       {lp_fees_op:>12,.2f} OP")
 
-    # Position value from LP simulation using get_position_balance
-    # Tick range 90000-94980, final price ~10468 OP/ETH
-    lp_final_eth = 10.6339
-    lp_final_op = 117825.76
+    # Calculate final position value from cumulative liquidity
+    final_liquidity = lp_results["cumulative_liquidity"].iloc[-1]
+    position_balance = get_position_balance(
+        position_l=final_liquidity,
+        sqrtpx96=final_sqrtpx96,
+        tick_lower=TICK_LOWER,
+        tick_upper=TICK_UPPER,
+        decimal_x=1e18,
+        decimal_y=1e18,
+    )
+    lp_final_eth = position_balance["token0"]
+    lp_final_op = position_balance["token1"]
 
     print(f"\n  Final Position Value:")
     print(f"    ETH in position: {lp_final_eth:>10.4f} ETH")

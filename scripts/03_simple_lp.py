@@ -70,7 +70,7 @@ class DailyLPResult:
     op_deposited: float
     liquidity_added: int
     cumulative_liquidity: int
-    pool_liquidity: int
+    median_pool_liquidity: int
     liquidity_share: float
     fees_earned_eth: float
     fees_earned_op: float
@@ -345,13 +345,13 @@ def run_lp_simulation(
         pending_fees_eth = fees_earned_eth
         pending_fees_op = fees_earned_op
 
-        # For reporting, calculate average liquidity share for the day
+        # For reporting, calculate median liquidity share for the day
         day_swaps = swaps[swaps["date"] == date]
         if len(day_swaps) > 0 and position.liquidity > 0:
-            avg_pool_liq = day_swaps["LIQUIDITY"].astype(float).mean()
-            liquidity_share = position.liquidity / (avg_pool_liq + position.liquidity)
+            median_pool_liq = day_swaps["LIQUIDITY"].astype(float).median()
+            liquidity_share = position.liquidity / (median_pool_liq + position.liquidity)
         else:
-            avg_pool_liq = 0
+            median_pool_liq = 0
             liquidity_share = 0
 
         daily_results.append(DailyLPResult(
@@ -363,7 +363,7 @@ def run_lp_simulation(
             op_deposited=op_deposited,
             liquidity_added=liquidity_added,
             cumulative_liquidity=position.liquidity,
-            pool_liquidity=int(avg_pool_liq),
+            median_pool_liquidity=int(median_pool_liq),
             liquidity_share=liquidity_share,
             fees_earned_eth=fees_earned_eth,
             fees_earned_op=fees_earned_op,

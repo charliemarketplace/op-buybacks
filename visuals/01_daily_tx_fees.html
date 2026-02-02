@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily OP Mainnet Transaction Fees (January 2026)</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/annotations.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+        #chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #chart {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container">
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        // Daily transaction fees data from op-mainnet-daily-fees-jan2026.csv
+        const rawData = [
+            { date: '2026-01-01', fees_eth: 0.7169671788241134 },
+            { date: '2026-01-02', fees_eth: 0.668637659316984 },
+            { date: '2026-01-03', fees_eth: 0.4449203045556942 },
+            { date: '2026-01-04', fees_eth: 0.4841604742975652 },
+            { date: '2026-01-05', fees_eth: 0.7603447937490813 },
+            { date: '2026-01-06', fees_eth: 0.777177473667594 },
+            { date: '2026-01-07', fees_eth: 0.788044423009375 },
+            { date: '2026-01-08', fees_eth: 0.8665736157415502 },
+            { date: '2026-01-09', fees_eth: 0.749188185206531 },
+            { date: '2026-01-10', fees_eth: 0.34569821084683505 },
+            { date: '2026-01-11', fees_eth: 0.38607819132013554 },
+            { date: '2026-01-12', fees_eth: 0.6414016050385083 },
+            { date: '2026-01-13', fees_eth: 1.1701079303028536 },
+            { date: '2026-01-14', fees_eth: 0.7315007828879646 },
+            { date: '2026-01-15', fees_eth: 0.6283306521916606 },
+            { date: '2026-01-16', fees_eth: 0.5735145730637236 },
+            { date: '2026-01-17', fees_eth: 0.5534796538356288 },
+            { date: '2026-01-18', fees_eth: 0.5716984451409135 },
+            { date: '2026-01-19', fees_eth: 1.1563400466605467 },
+            { date: '2026-01-20', fees_eth: 0.9859215309905558 },
+            { date: '2026-01-21', fees_eth: 1.061702939710802 },
+            { date: '2026-01-22', fees_eth: 0.6792620781042792 },
+            { date: '2026-01-23', fees_eth: 0.7063627282662563 },
+            { date: '2026-01-24', fees_eth: 0.3477919401548602 },
+            { date: '2026-01-25', fees_eth: 0.6736962858610756 },
+            { date: '2026-01-26', fees_eth: 0.8043639112657215 },
+            { date: '2026-01-27', fees_eth: 0.6614216779644972 },
+            { date: '2026-01-28', fees_eth: 0.9410304264084715 },
+            { date: '2026-01-29', fees_eth: 1.0156425592375014 },
+            { date: '2026-01-30', fees_eth: 1.2820100902445064 },
+            { date: '2026-01-31', fees_eth: 6.9595283665390575 }
+        ];
+
+        // Calculate totals
+        const totalFees = rawData.reduce((sum, d) => sum + d.fees_eth, 0);
+        const usableFees = rawData.slice(1).reduce((sum, d) => sum + d.fees_eth, 0);
+
+        // Prepare chart data - mark Jan 1 (not usable) and Jan 31 (outlier, not used)
+        const chartData = rawData.map((d, i) => {
+            const isJan1 = i === 0;
+            const isJan31 = i === rawData.length - 1;
+            return {
+                x: new Date(d.date).getTime(),
+                y: d.fees_eth,
+                color: isJan1 ? '#cccccc' : (isJan31 ? '#ff6b6b' : '#ff0420'),
+                note: isJan1 ? 'Jan 1: No T-1 data' : (isJan31 ? 'Jan 31: Not used in simulation' : null)
+            };
+        });
+
+        Highcharts.chart('chart', {
+            chart: {
+                type: 'column',
+                zoomType: 'x',
+                panning: { enabled: true, type: 'x' },
+                panKey: 'shift',
+                backgroundColor: '#ffffff'
+            },
+            title: {
+                text: 'Daily OP Mainnet Transaction Fees (January 2026)',
+                style: { fontSize: '24px', fontWeight: 'bold', color: '#333333' }
+            },
+            subtitle: {
+                text: `Total: ${totalFees.toFixed(2)} ETH | Usable (T-1 rule): ${usableFees.toFixed(2)} ETH`,
+                style: { fontSize: '16px', color: '#666666' }
+            },
+            xAxis: {
+                type: 'datetime',
+                title: { text: 'Date', style: { fontSize: '1.125rem' } },
+                labels: {
+                    style: { fontSize: '1rem' },
+                    format: '{value:%b %e}'
+                }
+            },
+            yAxis: {
+                title: { text: 'Transaction Fees (ETH)', style: { fontSize: '1.125rem', fontWeight: 'bold' } },
+                labels: {
+                    style: { fontSize: '1rem' },
+                    format: '{value:.2f}'
+                }
+            },
+            legend: { enabled: false },
+            tooltip: {
+                useHTML: true,
+                headerFormat: '<div style="text-align: center; margin-bottom: 8px; font-weight: bold; font-size: 14px;">{point.key:%B %e, %Y}</div>',
+                pointFormat: '<div style="text-align: center;"><span style="font-size: 16px; font-weight: bold;">{point.y:.4f}</span> ETH<br/>{point.note}</div>'
+            },
+            plotOptions: {
+                column: {
+                    borderWidth: 0,
+                    pointPadding: 0.1,
+                    groupPadding: 0.05
+                }
+            },
+            annotations: [{
+                labels: [{
+                    point: { x: new Date('2026-01-01').getTime(), y: 0.72, xAxis: 0, yAxis: 0 },
+                    text: 'No T-1 fees',
+                    backgroundColor: '#cccccc',
+                    style: { fontSize: '10px' }
+                }, {
+                    point: { x: new Date('2026-01-31').getTime(), y: 6.96, xAxis: 0, yAxis: 0 },
+                    text: 'Outlier - not used',
+                    backgroundColor: '#ff6b6b',
+                    style: { fontSize: '10px' }
+                }],
+                labelOptions: {
+                    borderRadius: 5,
+                    padding: 5,
+                    y: -15
+                }
+            }],
+            series: [{
+                name: 'TX Fees',
+                data: chartData
+            }],
+            credits: {
+                enabled: true,
+                text: 'Data: Dune Analytics',
+                style: { fontSize: '12px' }
+            }
+        });
+    </script>
+</body>
+</html>
