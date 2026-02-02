@@ -100,29 +100,74 @@ def get_end_of_day_sqrtpx96(swaps: pd.DataFrame, date) -> Optional[str]:
     return str(day_swaps.iloc[-1]["SQRTPRICEX96"])
 
 
-def get_daily_pool_stats(hourly: pd.DataFrame, swaps: pd.DataFrame) -> pd.DataFrame:
+def calculate_fees_from_swaps(
+    swaps: pd.DataFrame,
+    date,
+    our_liquidity: int,
+    tick_lower: int,
+    tick_upper: int,
+    fee_rate: float = 0.003,  # 0.3% pool
+) -> tuple[float, float]:
     """
-    Aggregate pool stats to daily level.
+    Calculate our fee earnings from each swap on a given day.
 
-    Returns DataFrame with:
-    - date
-    - pool_fees_eth: total ETH fees earned by pool
-    - pool_fees_op: total OP fees earned by pool
-    - avg_liquidity: average active liquidity
+    For each swap:
+    - Check if swap price is in our range
+    - Calculate our share: our_liq / (pool_liq + our_liq)
+    - Calculate fees from that swap (fee_rate of input amount)
+    - Sum our share of fees
+
+    Returns: (total_eth_fees, total_op_fees)
     """
-    daily_fees = hourly.groupby("date").agg(
-        pool_fees_eth=("eth_fees", "sum"),
-        pool_fees_op=("op_fees", "sum"),
-    ).reset_index()
+    if our_liquidity <= 0:
+        return 0.0, 0.0
 
-    daily_liq = swaps.groupby("date").agg(
-        avg_liquidity=("LIQUIDITY", "mean"),
-    ).reset_index()
+    day_swaps = swaps[swaps["date"] == date]
+    if len(day_swaps) == 0:
+        return 0.0, 0.0
 
-    daily = daily_fees.merge(daily_liq, on="date", how="left")
-    daily["avg_liquidity"] = daily["avg_liquidity"].fillna(daily["avg_liquidity"].mean())
+    # Get price bounds for our range
+    price_lower = tick_to_price(tick_lower, decimal_adjustment=1, yx=True)
+    price_upper = tick_to_price(tick_upper, decimal_adjustment=1, yx=True)
 
-    return daily
+    total_eth_fees = 0.0
+    total_op_fees = 0.0
+
+    for _, swap in day_swaps.iterrows():
+        # Get price after this swap
+        sqrtpx96 = int(float(swap["SQRTPRICEX96"]))
+        price = sqrtpx96_to_price(sqrtpx96, invert=False, decimal_adjustment=1)
+
+        # Only earn fees if swap is in our range
+        if price < price_lower or price > price_upper:
+            continue
+
+        pool_liquidity = int(swap["LIQUIDITY"])
+        if pool_liquidity <= 0:
+            continue
+
+        # Our share of fees - we deepen the pool
+        total_liquidity = pool_liquidity + our_liquidity
+        our_share = our_liquidity / total_liquidity
+
+        # Calculate fees from this swap
+        # AMOUNT0_RAW = WETH change, AMOUNT1_RAW = OP change
+        # Positive = token flows INTO pool (user sells that token)
+        # Fee is paid on the token being sold
+        amount0 = float(swap["AMOUNT0_RAW"]) / 1e18  # WETH (18 decimals)
+        amount1 = float(swap["AMOUNT1_RAW"]) / 1e18  # OP (18 decimals)
+
+        if amount0 > 0:
+            # User sold ETH, fee in ETH
+            swap_fee_eth = amount0 * fee_rate
+            total_eth_fees += swap_fee_eth * our_share
+
+        if amount1 > 0:
+            # User sold OP, fee in OP
+            swap_fee_op = amount1 * fee_rate
+            total_op_fees += swap_fee_op * our_share
+
+    return total_eth_fees, total_op_fees
 
 
 def calculate_deposit(
@@ -223,7 +268,6 @@ def calculate_deposit(
 
 
 def run_lp_simulation(
-    hourly: pd.DataFrame,
     fees: pd.DataFrame,
     swaps: pd.DataFrame,
     tick_lower: int = TICK_LOWER,
@@ -232,10 +276,12 @@ def run_lp_simulation(
     """
     Run LP simulation over the entire period.
 
+    Fee calculation is done per-swap with correct share formula:
+    our_share = our_liquidity / (pool_liquidity + our_liquidity)
+
     Returns:
         (final_position, daily_results)
     """
-    daily_pool = get_daily_pool_stats(hourly, swaps)
     dates = sorted(fees["block_date"].unique())
 
     position = LPPosition(tick_lower=tick_lower, tick_upper=tick_upper)
@@ -263,15 +309,6 @@ def run_lp_simulation(
 
         price = sqrtpx96_to_price(int(float(sqrtpx96)), invert=False, decimal_adjustment=1)
 
-        # Pool stats for today
-        pool_data = daily_pool[daily_pool["date"] == date]
-        if len(pool_data) == 0:
-            continue
-
-        pool_fees_eth = pool_data["pool_fees_eth"].values[0]
-        pool_fees_op = pool_data["pool_fees_op"].values[0]
-        pool_liquidity = int(pool_data["avg_liquidity"].values[0])
-
         # Convert pending OP fees to ETH equivalent for budget
         pending_fees_eth_equiv = pending_fees_eth + (pending_fees_op / price if price > 0 else 0)
         budget_eth = tx_fees_eth + pending_fees_eth_equiv
@@ -284,20 +321,20 @@ def run_lp_simulation(
             tick_upper=tick_upper,
         )
 
-        # Update position
+        # Update position BEFORE calculating fees (we deposit at start of day)
         position.liquidity += liquidity_added
         position.total_eth_deposited += eth_deposited
         position.total_op_deposited += op_deposited
 
-        # Calculate fee share
-        if pool_liquidity > 0 and position.liquidity > 0:
-            liquidity_share = position.liquidity / pool_liquidity
-        else:
-            liquidity_share = 0
-
-        # Fees earned today
-        fees_earned_eth = pool_fees_eth * liquidity_share
-        fees_earned_op = pool_fees_op * liquidity_share
+        # Calculate fees from each swap on this day
+        # Uses our_liq / (pool_liq + our_liq) formula
+        fees_earned_eth, fees_earned_op = calculate_fees_from_swaps(
+            swaps=swaps,
+            date=date,
+            our_liquidity=position.liquidity,
+            tick_lower=tick_lower,
+            tick_upper=tick_upper,
+        )
 
         position.total_fees_earned_eth += fees_earned_eth
         position.total_fees_earned_op += fees_earned_op
@@ -305,6 +342,15 @@ def run_lp_simulation(
         # Store for next day's budget
         pending_fees_eth = fees_earned_eth
         pending_fees_op = fees_earned_op
+
+        # For reporting, calculate average liquidity share for the day
+        day_swaps = swaps[swaps["date"] == date]
+        if len(day_swaps) > 0 and position.liquidity > 0:
+            avg_pool_liq = day_swaps["LIQUIDITY"].astype(float).mean()
+            liquidity_share = position.liquidity / (avg_pool_liq + position.liquidity)
+        else:
+            avg_pool_liq = 0
+            liquidity_share = 0
 
         daily_results.append(DailyLPResult(
             date=str(date),
@@ -315,7 +361,7 @@ def run_lp_simulation(
             op_deposited=op_deposited,
             liquidity_added=liquidity_added,
             cumulative_liquidity=position.liquidity,
-            pool_liquidity=pool_liquidity,
+            pool_liquidity=int(avg_pool_liq),
             liquidity_share=liquidity_share,
             fees_earned_eth=fees_earned_eth,
             fees_earned_op=fees_earned_op,
@@ -342,7 +388,6 @@ def main():
 
     print("\nRunning LP simulation...")
     position, daily_results = run_lp_simulation(
-        hourly=hourly,
         fees=fees,
         swaps=swaps,
         tick_lower=TICK_LOWER,

@@ -26,7 +26,7 @@ def main():
     fees = pd.read_csv(project_root / "data" / "op-mainnet-daily-fees-jan2026.csv")
 
     # Get final price from LP results (end of Jan 31st)
-    final_price = 10327.01  # From LP simulation output - last sqrtPriceX96
+    final_price = 10467.93  # From LP simulation output - position value price
 
     print("=" * 70)
     print("STRATEGY COMPARISON: January 2026")
@@ -74,9 +74,9 @@ def main():
     print(f"    OP fees:       {lp_fees_op:>12,.2f} OP")
 
     # Position value from LP simulation using get_position_balance
-    # Tick range 90000-94980, final price ~10327 OP/ETH
-    lp_final_eth = 10.6398
-    lp_final_op = 117890.97
+    # Tick range 90000-94980, final price ~10468 OP/ETH
+    lp_final_eth = 10.6339
+    lp_final_op = 117825.76
 
     print(f"\n  Final Position Value:")
     print(f"    ETH in position: {lp_final_eth:>10.4f} ETH")
