@@ -42,7 +42,6 @@ This case study focuses on:
 | Strategy | Mechanism | Outcome |
 |----------|-----------|---------|
 | **Naive buyback** | Swap ETH → OP at random time/price | Accumulate OP, subject to timing luck |
-| **Timing buyback** | Swap when OP is relatively low (OHLC signals) | Potentially better avg price, more complexity |
 | **POL (Protocol Owned Liquidity)** | Deploy ETH + OP as Uniswap V3 liquidity | Accumulate both tokens + trading fees |
 
 ---
@@ -129,20 +128,12 @@ from uniswap import (
 
 ## Strategies
 
-Four buyback strategies to compare, each using Day T-1 tx fees as Day T budget:
+Two buyback strategies to compare, each using Day T-1 tx fees as Day T budget:
 
 ### 1. Monte Carlo Random Purchases
 
-Execute random purchases at random times throughout the day. Simulates naive DCA approach.
+Execute random purchases at random times throughout the day. Simulates naive DCA approach — buy OP directly with ETH fees.
 
-### 2. Buy at Low
+### 2. Simple Wide LP
 
-Attempt to buy at the previous day's low price. If price never touches target, accumulate budget until it does.
-
-### 3. Simple Wide LP
-
-Deposit fees into a single wide-range LP position. All future deposits go to the same range. Track liquidity accumulation and fee compounding.
-
-### 4. Rolling VWAP ± StdDev LP
-
-Split fees across multiple positions centered on VWAP with rolling standard deviation ranges. Manage multiple positions, compound daily.
+Deposit fees into a single wide-range LP position. All future deposits go to the same range (assume free swapping to match token ratio). Track liquidity accumulation and fee compounding over time. Goal: compare accumulation via LP fees vs. direct buying.
