@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple LP Strategy Results (January 2026)</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+        .summary-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .summary-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff0420;
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-box">
+        <h2>LP Strategy Summary</h2>
+        <div class="summary-grid" id="summary"></div>
+    </div>
+
+    <div class="chart-container">
+        <div id="chart-fees" class="chart"></div>
+    </div>
+
+    <div class="chart-container">
+        <div id="chart-cumulative" class="chart"></div>
+    </div>
+
+    <div class="chart-container">
+        <div id="chart-liquidity" class="chart"></div>
+    </div>
+
+    <script>
+        // LP daily results from lp_daily_results.csv (using median pool liquidity)
+        const lpData = [
+            { date: '2026-01-02', fees_eth: 0.000388, fees_op: 4.43, cumulative_fees_eth: 0.000388, cumulative_fees_op: 4.43, liquidity_share: 0.0182 },
+            { date: '2026-01-03', fees_eth: 0.000558, fees_op: 4.01, cumulative_fees_eth: 0.000945, cumulative_fees_op: 8.44, liquidity_share: 0.0358 },
+            { date: '2026-01-04', fees_eth: 0.000977, fees_op: 7.16, cumulative_fees_eth: 0.001922, cumulative_fees_op: 15.60, liquidity_share: 0.0399 },
+            { date: '2026-01-05', fees_eth: 0.001075, fees_op: 9.99, cumulative_fees_eth: 0.002998, cumulative_fees_op: 25.59, liquidity_share: 0.0523 },
+            { date: '2026-01-06', fees_eth: 0.001836, fees_op: 20.89, cumulative_fees_eth: 0.004833, cumulative_fees_op: 46.49, liquidity_share: 0.0711 },
+            { date: '2026-01-07', fees_eth: 0.002102, fees_op: 23.05, cumulative_fees_eth: 0.006935, cumulative_fees_op: 69.54, liquidity_share: 0.0825 },
+            { date: '2026-01-08', fees_eth: 0.002940, fees_op: 25.99, cumulative_fees_eth: 0.009876, cumulative_fees_op: 95.53, liquidity_share: 0.0977 },
+            { date: '2026-01-09', fees_eth: 0.001920, fees_op: 16.36, cumulative_fees_eth: 0.011795, cumulative_fees_op: 111.89, liquidity_share: 0.1209 },
+            { date: '2026-01-10', fees_eth: 0.002361, fees_op: 19.96, cumulative_fees_eth: 0.014156, cumulative_fees_op: 131.85, liquidity_share: 0.1623 },
+            { date: '2026-01-11', fees_eth: 0.001067, fees_op: 17.65, cumulative_fees_eth: 0.015223, cumulative_fees_op: 149.50, liquidity_share: 0.1527 },
+            { date: '2026-01-12', fees_eth: 0.003133, fees_op: 34.74, cumulative_fees_eth: 0.018357, cumulative_fees_op: 184.24, liquidity_share: 0.1514 },
+            { date: '2026-01-13', fees_eth: 0.012132, fees_op: 73.15, cumulative_fees_eth: 0.030488, cumulative_fees_op: 257.39, liquidity_share: 0.1916 },
+            { date: '2026-01-14', fees_eth: 0.002874, fees_op: 50.04, cumulative_fees_eth: 0.033362, cumulative_fees_op: 307.43, liquidity_share: 0.1813 },
+            { date: '2026-01-15', fees_eth: 0.004998, fees_op: 56.17, cumulative_fees_eth: 0.038360, cumulative_fees_op: 363.60, liquidity_share: 0.1552 },
+            { date: '2026-01-16', fees_eth: 0.004256, fees_op: 40.58, cumulative_fees_eth: 0.042616, cumulative_fees_op: 404.17, liquidity_share: 0.1526 },
+            { date: '2026-01-17', fees_eth: 0.005861, fees_op: 45.30, cumulative_fees_eth: 0.048477, cumulative_fees_op: 449.47, liquidity_share: 0.2053 },
+            { date: '2026-01-18', fees_eth: 0.004724, fees_op: 76.71, cumulative_fees_eth: 0.053202, cumulative_fees_op: 526.18, liquidity_share: 0.0325 },
+            { date: '2026-01-19', fees_eth: 0.014980, fees_op: 151.46, cumulative_fees_eth: 0.068182, cumulative_fees_op: 677.64, liquidity_share: 0.1795 },
+            { date: '2026-01-20', fees_eth: 0.012113, fees_op: 108.66, cumulative_fees_eth: 0.080296, cumulative_fees_op: 786.30, liquidity_share: 0.0370 },
+            { date: '2026-01-21', fees_eth: 0.009827, fees_op: 83.65, cumulative_fees_eth: 0.090122, cumulative_fees_op: 869.95, liquidity_share: 0.2709 },
+            { date: '2026-01-22', fees_eth: 0.007548, fees_op: 67.34, cumulative_fees_eth: 0.097671, cumulative_fees_op: 937.29, liquidity_share: 0.0363 },
+            { date: '2026-01-23', fees_eth: 0.006686, fees_op: 68.79, cumulative_fees_eth: 0.104357, cumulative_fees_op: 1006.08, liquidity_share: 0.0378 },
+            { date: '2026-01-24', fees_eth: 0.001969, fees_op: 23.11, cumulative_fees_eth: 0.106326, cumulative_fees_op: 1029.19, liquidity_share: 0.0756 },
+            { date: '2026-01-25', fees_eth: 0.007097, fees_op: 82.46, cumulative_fees_eth: 0.113423, cumulative_fees_op: 1111.65, liquidity_share: 0.0657 },
+            { date: '2026-01-26', fees_eth: 0.004622, fees_op: 44.48, cumulative_fees_eth: 0.118045, cumulative_fees_op: 1156.12, liquidity_share: 0.0644 },
+            { date: '2026-01-27', fees_eth: 0.004425, fees_op: 64.96, cumulative_fees_eth: 0.122470, cumulative_fees_op: 1221.08, liquidity_share: 0.0678 },
+            { date: '2026-01-28', fees_eth: 0.006806, fees_op: 62.82, cumulative_fees_eth: 0.129276, cumulative_fees_op: 1283.90, liquidity_share: 0.0694 },
+            { date: '2026-01-29', fees_eth: 0.006444, fees_op: 129.00, cumulative_fees_eth: 0.135720, cumulative_fees_op: 1412.90, liquidity_share: 0.0774 },
+            { date: '2026-01-30', fees_eth: 0.009572, fees_op: 89.39, cumulative_fees_eth: 0.145293, cumulative_fees_op: 1502.29, liquidity_share: 0.0789 },
+            { date: '2026-01-31', fees_eth: 0.020795, fees_op: 235.86, cumulative_fees_eth: 0.166087, cumulative_fees_op: 1738.15, liquidity_share: 0.2786 }
+        ];
+
+        // Calculate summary stats
+        const totalFeesETH = lpData[lpData.length - 1].cumulative_fees_eth;
+        const totalFeesOP = lpData[lpData.length - 1].cumulative_fees_op;
+        const medianLiquidityShare = [...lpData].map(d => d.liquidity_share).sort((a,b) => a-b)[Math.floor(lpData.length/2)];
+        const finalPrice = 10467.93; // From end of period
+        const totalFeesOPEquiv = totalFeesOP + (totalFeesETH * finalPrice);
+
+        document.getElementById('summary').innerHTML = `
+            <div class="summary-item"><div class="summary-value">${totalFeesETH.toFixed(4)}</div><div class="summary-label">Total ETH Fees Earned</div></div>
+            <div class="summary-item"><div class="summary-value">${totalFeesOP.toLocaleString(undefined, {maximumFractionDigits: 0})}</div><div class="summary-label">Total OP Fees Earned</div></div>
+            <div class="summary-item"><div class="summary-value">${totalFeesOPEquiv.toLocaleString(undefined, {maximumFractionDigits: 0})}</div><div class="summary-label">Total Fees (OP equiv)</div></div>
+            <div class="summary-item"><div class="summary-value">${(medianLiquidityShare * 100).toFixed(1)}%</div><div class="summary-label">Median Liquidity Share</div></div>
+        `;
+
+        // Prepare data for charts
+        const dates = lpData.map(d => new Date(d.date).getTime());
+        const feesETH = lpData.map((d, i) => [dates[i], d.fees_eth]);
+        const feesOP = lpData.map((d, i) => [dates[i], d.fees_op]);
+        const cumFeesETH = lpData.map((d, i) => [dates[i], d.cumulative_fees_eth]);
+        const cumFeesOP = lpData.map((d, i) => [dates[i], d.cumulative_fees_op]);
+        const liqShare = lpData.map((d, i) => [dates[i], d.liquidity_share * 100]);
+
+        // Chart 1: Daily Fees Earned
+        Highcharts.chart('chart-fees', {
+            chart: { zoomType: 'x', backgroundColor: '#ffffff' },
+            title: { text: 'Daily LP Fees Earned', style: { fontSize: '20px', fontWeight: 'bold' } },
+            subtitle: { text: 'ETH and OP fees earned from trading activity in our LP range' },
+            xAxis: {
+                type: 'datetime',
+                labels: { format: '{value:%b %e}' }
+            },
+            yAxis: [{
+                title: { text: 'ETH Fees', style: { color: '#627eea' } },
+                labels: { format: '{value:.4f}', style: { color: '#627eea' } }
+            }, {
+                title: { text: 'OP Fees', style: { color: '#ff0420' } },
+                labels: { format: '{value:.0f}', style: { color: '#ff0420' } },
+                opposite: true
+            }],
+            tooltip: { shared: true },
+            legend: { enabled: true },
+            series: [{
+                name: 'ETH Fees',
+                type: 'column',
+                data: feesETH,
+                color: '#627eea',
+                yAxis: 0
+            }, {
+                name: 'OP Fees',
+                type: 'column',
+                data: feesOP,
+                color: '#ff0420',
+                yAxis: 1
+            }],
+            credits: { enabled: false }
+        });
+
+        // Chart 2: Cumulative Fees (Compounding Effect)
+        Highcharts.chart('chart-cumulative', {
+            chart: { zoomType: 'x', backgroundColor: '#ffffff' },
+            title: { text: 'Cumulative LP Fees Earned', style: { fontSize: '20px', fontWeight: 'bold' } },
+            subtitle: { text: 'Shows compounding effect as fees roll into next day\'s deposits' },
+            xAxis: {
+                type: 'datetime',
+                labels: { format: '{value:%b %e}' }
+            },
+            yAxis: [{
+                title: { text: 'Cumulative ETH Fees', style: { color: '#627eea' } },
+                labels: { format: '{value:.3f}', style: { color: '#627eea' } }
+            }, {
+                title: { text: 'Cumulative OP Fees', style: { color: '#ff0420' } },
+                labels: { format: '{value:,.0f}', style: { color: '#ff0420' } },
+                opposite: true
+            }],
+            tooltip: { shared: true },
+            legend: { enabled: true },
+            series: [{
+                name: 'Cumulative ETH',
+                type: 'area',
+                data: cumFeesETH,
+                color: '#627eea',
+                fillOpacity: 0.3,
+                yAxis: 0
+            }, {
+                name: 'Cumulative OP',
+                type: 'area',
+                data: cumFeesOP,
+                color: '#ff0420',
+                fillOpacity: 0.3,
+                yAxis: 1
+            }],
+            credits: { enabled: false }
+        });
+
+        // Chart 3: Liquidity Share Over Time
+        Highcharts.chart('chart-liquidity', {
+            chart: { zoomType: 'x', backgroundColor: '#ffffff' },
+            title: { text: 'Share of Pool Liquidity Over Time', style: { fontSize: '20px', fontWeight: 'bold' } },
+            subtitle: { text: 'Our position\'s share of median active liquidity in the Uniswap V3 pool' },
+            xAxis: {
+                type: 'datetime',
+                labels: { format: '{value:%b %e}' }
+            },
+            yAxis: {
+                title: { text: 'Liquidity Share (%)', style: { fontWeight: 'bold' } },
+                labels: { format: '{value:.1f}%' },
+                max: 30
+            },
+            tooltip: {
+                headerFormat: '<b>{point.key:%B %e, %Y}</b><br/>',
+                pointFormat: 'Liquidity Share: <b>{point.y:.2f}%</b>'
+            },
+            legend: { enabled: false },
+            series: [{
+                name: 'Liquidity Share',
+                type: 'area',
+                data: liqShare,
+                color: '#ff0420',
+                fillColor: {
+                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                    stops: [
+                        [0, 'rgba(255, 4, 32, 0.4)'],
+                        [1, 'rgba(255, 4, 32, 0.05)']
+                    ]
+                },
+                lineWidth: 2
+            }],
+            credits: {
+                enabled: true,
+                text: 'Data: Simulation using Flipside swap data',
+                style: { fontSize: '12px' }
+            }
+        });
+    </script>
+</body>
+</html>
