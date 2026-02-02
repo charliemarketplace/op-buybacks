@@ -29,6 +29,22 @@ This case study focuses on:
 
 For simplicity of data collection we use 100% of OP Mainnet fees instead of 50% of total superchain fees. 
 
+## Getting Started
+
+This project uses uv for package management. It rewrites my R uniswap package into Python and includes tests of that package to replicate hypothetical liquidity positions and impact of those positions on fees.
+
+To clone and run this project:
+
+```bash
+git clone <repo-url>
+cd op-buybacks
+uv sync          # installs dependencies from pyproject.toml / uv.lock
+uv run python scripts/01_processing.py
+uv run python scripts/02_monte_carlo_buys.py
+uv run python scripts/03_simple_lp.py
+uv run python scripts/04_compare_strategies.py
+```
+
 ### Contracts
 
 | Contract | Address |
@@ -70,6 +86,11 @@ Instead of simply buying OP from the pool (being a liquidity *taker*), the proto
 ## Data
 
 All data covers **January 2026** as a simulation period.
+
+### Data Sources
+
+- **Swap data**: Flipside Crypto query for all swaps on the Uniswap V3 OP/WETH 0.3% pool on OP Mainnet, January 2026 (17,201 swaps)
+- **Transaction fees**: Dune Analytics query for daily OP Mainnet transaction fees in ETH
 
 ### Raw Data (`data/`)
 
