@@ -89,12 +89,17 @@ def aggregate_hourly(df: pd.DataFrame) -> pd.DataFrame:
     Output columns:
     - HOUR_: hourly timestamp
     - open, low, high, close: OP/ETH prices
+    - vwap: volume-weighted average price within the hour
     - op_bought, op_sold: OP volumes
     - eth_bought, eth_sold: ETH volumes
     - op_fees, eth_fees: LP fees earned
     """
     # Sort by timestamp for proper OHLC calculation
-    df = df.sort_values("BLOCK_TIMESTAMP")
+    df = df.sort_values("BLOCK_TIMESTAMP").copy()
+
+    # Calculate ETH volume (absolute value) and price*volume for VWAP
+    df["eth_volume"] = df["eth_amount"].abs()
+    df["price_x_volume"] = df["price_op_per_eth"] * df["eth_volume"]
 
     # OHLC aggregation
     ohlc = df.groupby("HOUR_").agg(
@@ -104,7 +109,7 @@ def aggregate_hourly(df: pd.DataFrame) -> pd.DataFrame:
         close=("price_op_per_eth", "last"),
     )
 
-    # Volume aggregation
+    # Volume aggregation including VWAP components
     volumes = df.groupby("HOUR_").agg(
         op_bought=("op_bought", "sum"),
         op_sold=("op_sold", "sum"),
@@ -113,51 +118,20 @@ def aggregate_hourly(df: pd.DataFrame) -> pd.DataFrame:
         op_fees=("op_fees", "sum"),
         eth_fees=("eth_fees", "sum"),
         trade_count=("TX_HASH", "count"),
+        sum_price_x_volume=("price_x_volume", "sum"),
+        sum_eth_volume=("eth_volume", "sum"),
     )
+
+    # Calculate within-hour VWAP: Σ(price × |eth_volume|) / Σ(|eth_volume|)
+    volumes["vwap"] = volumes["sum_price_x_volume"] / volumes["sum_eth_volume"]
+
+    # Drop intermediate columns
+    volumes = volumes.drop(columns=["sum_price_x_volume", "sum_eth_volume"])
 
     # Combine
     hourly = ohlc.join(volumes).reset_index()
 
     return hourly
-
-
-def calculate_vwap(df: pd.DataFrame, window_hours: int = 24) -> pd.Series:
-    """
-    Calculate rolling VWAP (Volume Weighted Average Price).
-
-    VWAP = Σ(price × |eth_volume|) / Σ(|eth_volume|)
-
-    Uses ETH volume as weight since ETH is the budget currency for buybacks.
-
-    Args:
-        df: DataFrame with processed swap data (not aggregated)
-        window_hours: Rolling window size in hours
-
-    Returns:
-        Series with VWAP values indexed by hour
-    """
-    df = df.sort_values("BLOCK_TIMESTAMP").copy()
-
-    # Total ETH volume per trade (absolute value, both directions)
-    df["eth_volume"] = df["eth_amount"].abs()
-
-    # Price × Volume for numerator
-    df["price_x_volume"] = df["price_op_per_eth"] * df["eth_volume"]
-
-    # Aggregate to hourly
-    hourly = df.groupby("HOUR_").agg(
-        sum_price_x_volume=("price_x_volume", "sum"),
-        sum_volume=("eth_volume", "sum"),
-    )
-
-    # Rolling sum for VWAP calculation
-    rolling_pv = hourly["sum_price_x_volume"].rolling(window=window_hours, min_periods=1).sum()
-    rolling_v = hourly["sum_volume"].rolling(window=window_hours, min_periods=1).sum()
-
-    vwap = rolling_pv / rolling_v
-    vwap.name = f"vwap_{window_hours}h"
-
-    return vwap
 
 
 def main():
@@ -176,16 +150,6 @@ def main():
 
     print("Aggregating to hourly...")
     hourly = aggregate_hourly(df)
-
-    # Add VWAP calculations (24h and 168h/7d windows)
-    print("Calculating VWAP...")
-    vwap_24h = calculate_vwap(df, window_hours=24)
-    vwap_168h = calculate_vwap(df, window_hours=168)
-
-    hourly = hourly.set_index("HOUR_")
-    hourly["vwap_24h"] = vwap_24h
-    hourly["vwap_168h"] = vwap_168h
-    hourly = hourly.reset_index()
 
     # Save output
     print(f"Saving to {output_path}...")

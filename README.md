@@ -86,11 +86,11 @@ All data covers **January 2026** as a simulation period.
 **Hourly OHLCV columns:**
 - `HOUR_` — Hourly timestamp
 - `open`, `high`, `low`, `close` — OP/ETH prices (higher = more OP per ETH)
+- `vwap` — Volume-weighted average price within the hour
 - `op_bought`, `op_sold` — OP volume by direction
 - `eth_bought`, `eth_sold` — ETH volume by direction
 - `op_fees`, `eth_fees` — LP fees earned (0.3% of sold amounts)
 - `trade_count` — Number of swaps in hour
-- `vwap_24h`, `vwap_168h` — Rolling VWAP (24h and 7d windows)
 
 ### Queries (`queries/`)
 
