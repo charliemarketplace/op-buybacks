@@ -8,7 +8,7 @@ Track liquidity accumulation and fee compounding over time.
 
 Assumptions:
 - Free swapping to match token ratio for deposits (at current sqrtPriceX96)
-- Wide range (90000-94980 ticks) that stays in-range throughout the period
+- Wide range: ticks 90000-94980 (~8,099 to ~13,327 OP/ETH)
 - Fees compound daily into next day's budget
 
 For each day:
@@ -16,8 +16,10 @@ For each day:
 2. Get current sqrtPriceX96 from last swap of previous day
 3. Calculate token split needed for the range using match_tokens_to_range
 4. Add liquidity to position
-5. Calculate fee share = our_liquidity / total_pool_liquidity
-6. Earn fees proportionally from pool trading fees
+
+For each swap (fee calculation):
+5. Calculate fee share = our_liquidity / (pool_liquidity + our_liquidity)
+6. Earn fees proportionally from that swap's trading fees
 """
 
 import sys
@@ -41,8 +43,8 @@ from uniswap import (
 
 
 # Tick spacing for 0.3% pool is 60
-TICK_LOWER = 90000  # 90000 % 60 = 0 ✓
-TICK_UPPER = 94980  # 94980 % 60 = 0 ✓
+TICK_LOWER = 90000  # ~8,099 OP/ETH (90000 % 60 = 0 ✓)
+TICK_UPPER = 94980  # ~13,327 OP/ETH (94980 % 60 = 0 ✓)
 
 
 @dataclass
