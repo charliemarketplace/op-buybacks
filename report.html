@@ -235,12 +235,15 @@
             box-shadow: var(--shadow-lg);
             overflow: hidden;
             margin: 24px 0;
+            position: relative;
         }
 
         .chart-header {
             padding: 16px 24px;
             background: linear-gradient(135deg, var(--op-red) 0%, var(--op-red-dark) 100%);
             color: white;
+            position: relative;
+            z-index: 10;
         }
 
         .chart-header-title {
@@ -258,6 +261,8 @@
             width: 100%;
             height: 450px;
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .chart-small {
@@ -466,10 +471,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">OP Buybacks</div>
-                <div class="sidebar-subtitle">Strategy Analysis Report</div>
+                <div class="sidebar-subtitle">Argument for Protocol Owned Liquidity</div>
             </div>
             <nav class="toc">
                 <div class="toc-section">Overview</div>
+                <a href="#executive-summary" class="toc-link">Key Takeaway</a>
                 <a href="#intro" class="toc-link">Introduction</a>
                 <a href="#assumptions" class="toc-link">Simplifying Assumptions</a>
 
@@ -487,26 +493,60 @@
                 <div class="toc-section">Conclusion</div>
                 <a href="#tradeoffs" class="toc-link">Trade-offs</a>
                 <a href="#conclusion" class="toc-link">Final Thoughts</a>
+                <a href="#key-takeaway" class="toc-link">Key Takeaway</a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="main">
             <header class="page-header">
-                <h1 class="page-title"><span>OP</span> Buyback Strategy Analysis</h1>
-                <p class="page-subtitle">Comparing Monte Carlo Random Purchases vs. Simple Wide LP Positions</p>
+                <h1 class="page-title"><span> An Argument for Protocol Owned Liquidity </span> </h1> 
+                <p class="page-subtitle">Monte Carlo Randomized Buybacks vs. A single Wide Uni v3 Position</p>
                 <div class="page-meta">
                     <span>January 2026</span>
-                    <span>OP Mainnet Data</span>
-                    <span>1,000 Simulations</span>
+                    <span>OP Mainnet OP/ETH 0.3% pool</span>
+                    <span>Data: Flipside Crypto and Dune Analytics</span>
+                </div>
+                <div class="author-info" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                    <span style="color: var(--text-secondary);">Author: <strong style="color: var(--text-primary);">Carlos Mercado</strong></span>
+                    <a href="https://github.com/charliemarketplace/op-buybacks" target="_blank" style="margin-left: 16px; color: var(--op-red); text-decoration: none;">GitHub Repo</a>
                 </div>
             </header>
 
+            <!-- Executive Summary -->
+            <section id="executive-summary">
+                <h2>Key Takeaway</h2>
+                <div class="card" style="border-left: 4px solid var(--op-red); background: var(--op-red-light);">
+                    <p style="font-size: 20px; font-weight: 600; color: #000000; margin-bottom: 16px;"> A single month of OP Mainnet transaction fees (Jan 2026) would 20%+ increase the liquidity of OP/WETH on mainnet, make OP a market leader in protocol owned liquidity, and return MORE OP than randomized buybacks.</p>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-value">218,923</div>
+                        <div class="stat-label">Monte Carlo Mean</div>
+                    </div>
+                    <div class="stat-card" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">232,617</div>
+                        <div class="stat-label">LP Result (OP-equiv)</div>
+                    </div>
+                    <div class="stat-card" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">+6.3%</div>
+                        <div class="stat-label" style="color: #000000;">Single Month LP Excess Returns (OP)</div>
+                    </div>
+                    <div class="stat-card eth" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">~166K</div>
+                        <div class="stat-label" style="color: #000000;">Annualized Excess Returns (OP)</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Introduction -->
             <section id="intro">
-                <h2>Introduction</h2>
-                <p>This report analyzes two potential strategies for accumulating OP tokens using protocol transaction fee revenue. We compare a naive Dollar-Cost Averaging (DCA) approach via random market purchases against a passive liquidity provision strategy on Uniswap V3.</p>
-                <p>The goal is to understand which approach yields more OP tokens over a 30-day simulation period, accounting for execution timing variance and LP fee income.</p>
+                <h2>The Theory</h2>
+                <p> Buybacks can be dangerous. They invite discounted cashflow modeling that can result in high short-term volatility of token price. 
+                    Protocol Owned Liquidity takes a cut of this kind of arbitrage and generates a flywheel of activity that compounds over time.</p>
+                <p> Looking at Jan 2026 OPM swap data for the Uniswap v3 OP/WETH 0.3% pool on OP Mainnet (the most liquid OP/WETH pool of any platform on OPM) to compare randomized OP buys vs. a single wide concentrated liquidity position for that pool, with daily compounding of fees.</p>
+                <p>The LP strategy would have collected a position worth ~232,617 OP (Jan 31 closing price) compared to the average of 1,000 Monte Carlo simulations of randomized buybacks ~218,923 OP. Notably, it also beat the <em>maximum</em> outcome across the 1,000 random simulations — showing the value of fee compounding.</p>
             </section>
 
             <!-- Simplifying Assumptions -->
@@ -525,7 +565,7 @@
                 <div class="card">
                     <p><strong>Script:</strong> <code>01_processing.py</code></p>
                     <p><strong>Input:</strong> Raw swap data (<code>opweth03-swaps-jan2026.csv</code>) with sqrtPriceX96, amounts, timestamps</p>
-                    <p><strong>Output:</strong> Hourly OHLCV data (<code>hourly_ohlcv.csv</code>) with:</p>
+                    <p><strong>Output:</strong> Hourly Open-High-Low-Close price data from the swaps(<code>hourly_ohlcv.csv</code>)</p>
                     <ul>
                         <li>OHLC prices (OP per ETH) derived from sqrtPriceX96</li>
                         <li>Buy/sell volumes for OP and ETH</li>
@@ -540,14 +580,13 @@
                 <h3>Strategy 1: Monte Carlo Random Purchases</h3>
                 <div class="card">
                     <p><strong>Script:</strong> <code>02_monte_carlo_buys.py</code></p>
-                    <p>Simulates a naive DCA approach where the protocol buys OP at random times:</p>
-                    <ul>
-                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees (in ETH)</li>
-                        <li><strong>Execution:</strong> Randomly select 1-10 purchase times each day</li>
+                    <p>Every day (Jan 2 - Jan 31) spend the previous day's tx fees (Jan 1 - Jan 30) buying OP at random times in random splits.<ul>
+                        <li><strong>Daily Budget:</strong> Day T budget = Day T-1 transaction fees (in ETH)</li>
+                        <li><strong>Execution:</strong> Randomly select 1-10 purchase hours each day</li>
                         <li><strong>Price Sampling:</strong> Execute buys at prices sampled uniformly from each hour's low-high range</li>
                         <li><strong>Simulations:</strong> 1,000 runs to capture distribution of outcomes</li>
                     </ul>
-                    <p>This represents a simple "just buy OP" strategy with no attempt at market timing.</p>
+                    <p>Other potential strategies including RSI/MACD (technical indicators) purchasing, Bayesian Updating & Kelly Criterion for sizing, etc. </p>
                 </div>
             </section>
 
@@ -556,22 +595,22 @@
                 <h3>Strategy 2: Simple Wide LP</h3>
                 <div class="card">
                     <p><strong>Script:</strong> <code>03_simple_lp.py</code></p>
-                    <p>Instead of buying OP directly, deposit fees into a Uniswap V3 LP position:</p>
+                    <p>Every day (Jan 2 - Jan 31) deposit the previous day's tx fees (Jan 1 - Jan 30) AND any accumulated swap fees into a fixed wide range LP position.</p>
                     <ul>
-                        <li><strong>Tick Range:</strong> 90000 to 94980 (~8,099 to ~13,327 OP/ETH) - a wide range capturing likely price movement</li>
-                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees + Day T-1 earned LP fees (compounding)</li>
+                        <li><strong>Purposefully Wide Position:</strong> 90000 to 94980 (~8,099 to ~13,327 OP/ETH) - a wide range capturing likely price movement</li>
+                        <li><strong>Daily Budget:</strong> Day T budget = Day T-1 transaction fees + Day T-1 earned LP fees (compounding)</li>
                         <li><strong>Token Split:</strong> Split ETH budget into ETH + OP at the required ratio using <code>match_tokens_to_range()</code></li>
                         <li><strong>Liquidity:</strong> Add liquidity to the position using <code>get_liquidity()</code></li>
-                        <li><strong>Fee Calculation:</strong> Per-swap: <code>our_share = our_liquidity / (pool_liquidity + our_liquidity)</code></li>
+                        <li><strong>Fee Calculation:</strong> Swap level <code>fee_share = position_liquidity / (active_liquidity_in_pool + position_liquidity)</code></li>
                     </ul>
 
-                    <h4>Key Uniswap Functions Used</h4>
+                    <h4>Wrote & tested custom Uniswap v3 Python package</h4>
                     <ul>
                         <li><code>sqrtpx96_to_price()</code> - Convert on-chain price format to human-readable OP/ETH</li>
                         <li><code>match_tokens_to_range()</code> - Determine ETH/OP split needed for a given tick range</li>
                         <li><code>get_liquidity()</code> - Calculate liquidity units from token deposits</li>
                         <li><code>get_position_balance()</code> - Get current ETH and OP in the position at any price</li>
-                        <li><code>tick_to_price()</code> - Check if swap prices fall within our LP range</li>
+                        <li><code>tick_to_price()</code> - Check if swap prices fall within the LP range</li>
                     </ul>
                     <p>Final position value is converted to OP-equivalent by pricing the ETH component at end-of-period price.</p>
                 </div>
@@ -579,29 +618,22 @@
 
             <!-- Chart: Daily TX Fees -->
             <section id="chart-fees">
-                <h2>Results</h2>
-
-                <h3>Daily Transaction Fees</h3>
-                <p>Shows daily OP Mainnet transaction fees for January 2026. Note the T-1 rule: Day T's budget equals Day T-1's fees, creating a 1-day lag.</p>
-
+                <h3>TX Fees (Budget)</h3>
+                <p><a href="https://optimistic.etherscan.io/address/0x68f5c0a2de713a54991e01858fd27a3832401849#asset-multichain" target="_blank">TVL of the OP/WETH 0.3% pool on OP Mainnet</a> is ~1.5M OP & 57 ETH as of Feb 2, 2026. So POL would have a significant impact extremely quickly.</p>
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-header-title">Daily OP Mainnet Transaction Fees (January 2026)</div>
-                        <div class="chart-header-desc">Jan 1 (grey): No T-1 data available | Jan 31 (red): Outlier day (~7 ETH vs typical ~0.7 ETH), excluded</div>
+                        <div class="chart-header-title">Jan 2026: OP Mainnet tx fees averaged ~0.7 ETH/day.</div>
+                        <div class="chart-header-desc">Jan 1 (grey): No Dec 31 budget available | Jan 31 (red): Would be Feb 1's budget, no impact here.</div>
                     </div>
                     <div id="chart-daily-fees" class="chart"></div>
                 </div>
-            </section>
-
-            <!-- Chart: Monte Carlo -->
-            <section id="chart-monte-carlo">
                 <h3>Monte Carlo Simulation Distribution</h3>
-                <p>Histogram showing the distribution of total OP accumulated across 1,000 simulations. The tight distribution demonstrates that random timing within each day has minimal impact on outcomes.</p>
+                <p>Total OP purchased across 1,000 simulations of randomized buybacks.</p>
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-header-title">Monte Carlo Simulation: OP Accumulated Distribution</div>
-                        <div class="chart-header-desc">1,000 simulations of random daily purchases using T-1 transaction fees</div>
+                        <div class="chart-header-title">Random timing barely matters: 1,000 simulations clustered within 0.8% of each other</div>
+                        <div class="chart-header-desc">All outcomes between 218K-220K OP — execution timing variance is minimal</div>
                     </div>
                     <div id="chart-monte-carlo" class="chart"></div>
                     <div class="stats-box" id="mc-stats"></div>
@@ -611,16 +643,15 @@
             <!-- Chart: LP Strategy -->
             <section id="chart-lp">
                 <h3>LP Strategy Performance</h3>
-                <p>Three charts showing LP strategy metrics: daily fees earned, cumulative fees (compounding effect), and our position's share of total pool liquidity over time.</p>
-
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-header-title">Simple LP Strategy Results</div>
-                        <div class="chart-header-desc">Daily fees, cumulative compounding, and liquidity share analysis</div>
+                        <div class="chart-header-title">LP position grew to 12.7 ETH + 64.7K OP deposited, earning 1,738 OP in fees</div>
+                        <div class="chart-header-desc">Fee compounding drove daily growth; median 7.8% liquidity share captured trading activity</div>
                     </div>
                     <div class="lp-summary-grid" id="lp-summary"></div>
                     <div id="chart-lp-fees" class="chart chart-small"></div>
                     <div id="chart-lp-cumulative" class="chart chart-small"></div>
+                    <div id="chart-lp-deposits" class="chart chart-small"></div>
                     <div id="chart-lp-liquidity" class="chart chart-small"></div>
                 </div>
             </section>
@@ -629,67 +660,15 @@
             <section id="summary">
                 <h3>Summary Comparison</h3>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">~218,923</div>
-                        <div class="stat-label">Monte Carlo Mean OP</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">~232,617</div>
-                        <div class="stat-label">Simple LP OP-equivalent</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">+6%</div>
-                        <div class="stat-label">LP Advantage</div>
-                    </div>
-                    <div class="stat-card eth">
-                        <div class="stat-value">0.17 ETH</div>
-                        <div class="stat-label">LP Fees Earned (ETH)</div>
-                    </div>
+                <div class="info-box" style="background: rgba(0, 200, 83, 0.1); border-left-color: #00a854;">
+                    <p style="font-size: 18px; font-weight: 600; color: #00a854; margin-bottom: 8px;">LP Strategy Outperformed ALL 1,000 Monte Carlo Simulations</p>
                 </div>
-
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Monte Carlo</th>
-                            <th>Simple LP</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>OP Accumulated</td>
-                            <td>~218,923 OP (mean)</td>
-                            <td>~232,617 OP-equiv</td>
-                            <td class="winner">LP (+6%)</td>
-                        </tr>
-                        <tr>
-                            <td>Fee Income</td>
-                            <td>None</td>
-                            <td>1,738 OP + 0.17 ETH</td>
-                            <td class="winner">LP</td>
-                        </tr>
-                        <tr>
-                            <td>Complexity</td>
-                            <td>Simple swaps</td>
-                            <td>Position management</td>
-                            <td>Monte Carlo</td>
-                        </tr>
-                        <tr>
-                            <td>Risk Profile</td>
-                            <td>Market timing only</td>
-                            <td>IL + range risk</td>
-                            <td>Depends</td>
-                        </tr>
-                    </tbody>
-                </table>
 
                 <p>The LP strategy benefits from:</p>
                 <ol>
-                    <li><strong>Fee income:</strong> Earns ~1,738 OP + 0.17 ETH in trading fees</li>
+                    <li><strong>Fee income:</strong> Earns ~1,738 OP + 0.17 ETH in trading fees over 30 days</li>
                     <li><strong>Compounding:</strong> Daily fees roll into the next day's deposit, growing the position faster</li>
-                    <li><strong>Diversification:</strong> Maintains exposure to both ETH and OP</li>
+                    <li><strong>Dual exposure:</strong> A wide positions maintain exposure to both ETH and OP which reduces the risk of impermanent loss and falling out of range. At the price of less efficient liquidity (in terms of fees accumulated). </li>
                 </ol>
             </section>
 
@@ -723,9 +702,37 @@
             <section id="conclusion">
                 <h2>Conclusion</h2>
                 <div class="card">
-                    <p>Over a 30-day simulation, the fee compounding effect is modest but positive. The Simple Wide LP strategy outperforms Monte Carlo random buys by accumulating approximately <strong>6% more OP-equivalent value</strong>.</p>
-                    <p>Over longer periods or with higher trading volume, the LP advantage would compound further. However, the trade-offs around complexity and impermanent loss risk should be carefully considered based on the protocol's risk tolerance and operational capacity.</p>
-                    <p>The tight distribution in Monte Carlo results (std dev ~282 OP on mean of ~218,923) suggests that execution timing within each day has minimal impact - the real differentiator is the strategy choice itself.</p>
+                    <h4>Final LP Position Composition</h4>
+                    <p>At the end of January 2026, the LP position contains:</p>
+                    <ul>
+                        <li><strong>Total ETH deposited:</strong> ~12.7 ETH (cumulative daily deposits)</li>
+                        <li><strong>Total OP deposited:</strong> ~64,700 OP (cumulative daily deposits)</li>
+                        <li><strong>Fees earned:</strong> 1,738 OP + 0.17 ETH</li>
+                        <li><strong>Position OP-equivalent value:</strong> ~232,617 OP (at end-of-period price ~10,327 OP/ETH)</li>
+                    </ul>
+
+                    <h4>Annualized Perspective</h4>
+                    <p>The LP strategy generated <strong>~13,694 additional OP</strong> over 30 days compared to the Monte Carlo mean. Annualized, this represents:</p>
+                    <ul>
+                        <li><strong>Monthly advantage:</strong> ~13,694 OP (+6.3%)</li>
+                        <li><strong>Annualized advantage:</strong> ~166,000 OP per year at this rate</li>
+                        <li><strong>Annualized % gain:</strong> The compounding fee effect would accelerate over time as the position grows</li>
+                    </ul>
+
+                    <h4>Key Takeaway</h4>
+                    <p>The tight distribution in Monte Carlo results (std dev ~282 OP on mean of ~218,923) shows that execution timing within each day has minimal impact on DCA outcomes. The real differentiator is the <strong>strategy choice itself</strong>. LP's median liquidity share of ~7.8% enabled meaningful fee capture from pool trading activity, and the fee compounding effect - while modest over 30 days - would accelerate over longer horizons.</p>
+                </div>
+            </section>
+
+            <!-- Key Takeaway -->
+            <section id="key-takeaway">
+                <h2>Key Takeaway</h2>
+                <div class="card" style="border: 2px solid var(--op-red); background: var(--op-red-light);">
+                    <h4 style="margin-top: 0;">In One Sentence</h4>
+                    <p style="font-size: 18px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px;">LP beats DCA by 6% because fee compounding outweighs execution timing variance.</p>
+
+                    <h4>In One Paragraph</h4>
+                    <p style="margin-bottom: 0; color: var(--text-primary);">This analysis demonstrates that for OP buybacks using protocol transaction fees, a simple wide-range LP position on Uniswap V3 systematically outperforms random-timed market purchases. The Monte Carlo simulations revealed that intraday timing matters very little (all 1,000 outcomes clustered within 0.8%), but strategy choice matters a lot. The LP approach earned 1,738 OP + 0.17 ETH in trading fees over 30 days, and the compounding effect — rolling daily fees back into the position — created a 6.3% advantage that would accelerate over longer time horizons. At this rate, LP would generate ~166,000 additional OP annually compared to random DCA.</p>
                 </div>
             </section>
 
@@ -871,7 +878,7 @@
         // Monte Carlo simulation results (from monte_carlo_results.csv)
         const monteCarloResults = [219527.18, 218514.59, 219148.44, 218875.72, 219055.82, 218955.6, 218662.86, 218576.55, 219101.27, 218747.97, 218694.04, 218752.17, 218960.11, 219100.94, 219206.37, 219381.31, 218686.83, 218737.34, 219254.58, 218981.43, 218437.39, 218708.46, 218732.66, 219345.17, 218961.19, 218910.94, 219183.18, 218610.87, 218807.02, 218757.49, 219108.19, 218848.62, 218615.05, 219042.61, 218748.95, 219204.61, 218743.19, 218937.46, 218687.75, 218859.06, 219050.24, 219034.52, 219091.91, 219303.93, 219118.78, 218383.92, 219380.02, 219226.66, 219129.33, 219202.24, 219181.4, 218933.41, 219025.28, 218778.41, 218748.61, 218847.67, 218954.92, 219166.29, 218622.08, 218960.88, 218225.47, 219261.25, 218327.23, 218590.64, 219110.92, 218898.88, 218556.56, 218888.7, 218552.14, 218861.4, 218404.49, 218505.93, 219077.02, 219060.43, 218792.18, 219075.53, 218867.65, 219220.4, 218926.14, 218962.22, 219414.32, 218745.5, 218776.95, 219247.23, 218982.08, 218567.13, 219175.6, 218880.41, 218924.34, 218813.93, 218814.57, 218503.76, 219006.16, 218576.16, 218763.51, 219192.97, 218955.47, 219167.32, 219297.66, 218967.59, 218679.53, 219090.29, 218564.79, 219130.92, 218729.67, 219256.79, 219528.33, 218906.6, 219639.76, 218675.3, 219130.09, 218911.87, 219497.82, 218766.92, 218860.34, 218920.04, 218934.35, 219339.54, 218624.33, 218740.0, 218648.02, 218489.5, 218587.58, 219201.14, 218843.32, 218961.22, 218795.76, 218852.61, 219501.77, 219786.32, 218593.76, 219036.54, 218133.03, 219256.93, 218539.75, 218843.79, 219116.1, 218533.92, 218652.79, 219019.9, 218936.49, 218928.92, 219334.86, 219113.25, 218342.5, 219034.78, 218545.47, 219084.22, 218848.24, 218819.09, 218998.85, 219134.29, 218846.46, 219321.1, 219251.48, 218965.5, 218756.92, 219428.74, 219240.88, 218758.61, 218653.49, 218730.67, 218732.38, 218803.17, 219015.19, 218997.5, 219326.66, 218712.03, 218666.73, 218424.35, 218991.17, 218880.34, 218158.1, 219331.55, 218943.43, 218979.26, 219107.67, 218663.12, 218816.61, 219025.75, 218391.51, 219611.49, 218979.5, 219365.98, 218525.26, 219158.91, 218632.96, 218800.95, 218847.47, 219334.57, 218859.66, 218857.04, 218988.15, 218830.7, 219359.75, 218621.66, 219022.38, 218789.33, 218678.88, 219252.11, 219189.65, 219209.06, 218904.03, 218638.25, 219408.22, 219181.52, 219001.18, 218946.21, 218960.25, 218779.44, 219066.19, 218902.33, 218727.14, 219171.83, 218694.71, 219253.15, 219056.07, 218754.58, 218856.08, 218775.47, 218568.88, 219258.57, 218628.49, 218793.1, 219024.72, 219583.41, 218706.44, 218949.77, 218519.0, 219093.64, 219047.04, 218741.19, 218980.95, 218532.13, 219132.18, 218500.5, 219528.79, 218681.43, 218665.02, 218328.84, 219111.63, 218995.29, 219063.61, 218614.18, 218899.31, 218961.09, 218927.86, 218681.39, 218605.73, 218444.8, 219029.45, 218841.04, 219585.99, 218702.05, 218403.29, 219108.72, 219029.37, 219492.31, 219050.39, 219372.92, 218872.58, 218796.61, 218667.96, 219080.63, 219339.58, 219153.05, 219214.34, 218918.22, 218934.86, 218914.2, 218913.63, 218687.11, 219306.75, 218943.74, 218842.49, 218739.03, 218676.5, 219390.69, 219025.74, 218727.96, 218804.68, 218765.16, 218751.55, 218781.76, 219159.57, 218894.76, 218523.48, 219219.91, 219021.43, 218775.49, 219267.75, 219173.59, 218945.17, 219330.21, 218679.74, 219018.59, 218466.67, 219014.28, 218519.96, 218927.17, 219490.48, 218714.87, 219313.15, 219278.5, 219125.13, 219088.65, 218612.09, 218410.35, 218651.58, 218737.59, 218713.6, 218784.32, 218958.45, 218819.14, 219260.53, 218721.75, 219278.26, 218892.17, 218947.09, 219069.49, 219197.14, 218170.09, 218889.75, 218815.31, 218420.8, 219035.71, 219024.42, 218747.46, 218280.62, 218597.0, 218500.48, 219279.71, 218801.93, 218947.65, 219223.87, 219180.18, 219036.57, 218813.5, 219069.5, 218942.04, 218606.21, 219292.09, 218799.19, 219114.29, 218516.39, 218918.21, 218725.72, 218309.58, 219371.64, 219010.53, 218722.31, 219189.95, 218383.59, 218882.35, 219243.52, 218309.84, 218468.5, 218992.63, 218949.32, 218630.58, 218444.4, 219118.61, 218951.79, 219061.04, 219077.25, 218824.12, 219118.15, 218862.61, 218900.04, 218662.96, 219104.21, 218870.65, 219007.75, 218748.78, 218677.18, 219053.04, 219284.54, 218799.35, 218902.69, 218777.99, 218958.39, 218987.41, 218653.67, 219086.61, 219019.43, 218338.83, 218751.52, 219222.46, 218352.81, 219254.71, 218794.08, 219127.94, 218883.63, 218730.83, 218613.85, 218954.28, 219272.21, 219135.56, 218574.99, 219383.39, 218818.47, 219561.51, 218597.41, 219055.55, 218260.09, 218950.79, 219053.2, 218389.85, 218799.71, 218504.39, 219343.19, 218610.54, 219063.27, 218646.01, 218866.32, 219402.43, 218945.64, 218632.56, 218749.78, 218950.98, 219172.29, 219026.96, 219356.04, 218894.27, 219035.91, 218921.29, 218807.91, 218647.83, 218970.68, 218845.62, 218777.67, 219590.52, 218708.36, 218847.19, 219058.81, 219403.3, 219051.36, 218669.29, 218997.43, 219533.67, 218937.81, 218470.38, 218959.23, 218657.61, 219265.07, 218982.23, 218269.73, 219222.92, 218610.47, 218835.9, 219250.04, 218894.59, 218778.36, 219319.41, 218582.5, 218758.36, 219070.43, 219099.28, 219240.16, 218621.77, 219462.78, 219205.14, 218901.1, 219031.39, 218530.01, 218724.09, 218640.47, 219445.23, 219390.72, 219112.21, 218844.01, 219087.19, 218760.28, 219152.41, 218670.6, 218766.13, 218906.6, 219086.75, 218594.27, 218985.02, 218951.84, 218822.41, 219262.96, 218963.17, 219648.3, 218633.63, 218957.59, 218852.04, 218674.81, 218656.48, 218851.78, 219234.29, 219220.83, 219069.25, 219129.58, 218964.67, 219103.35, 219018.33, 219544.07, 218922.18, 218845.2, 218570.91, 219057.16, 218495.75, 218735.81, 219503.61, 218796.68, 218601.91, 218897.88, 218815.63, 218820.61, 219099.17, 218922.67, 218992.93, 218836.51, 218647.77, 219026.76, 218997.38, 218633.66, 218895.03, 218296.99, 218832.56, 219051.92, 218668.13, 218673.06, 218986.78, 219167.75, 218632.64, 219078.0, 218768.69, 218538.99, 219250.75, 218870.89, 219084.31, 218679.7, 219090.71, 219420.2, 219207.08, 218951.58, 218917.56, 218673.84, 218989.63, 218721.79, 219508.57, 218127.86, 218834.47, 219116.85, 218750.83, 218719.19, 219169.11, 218844.87, 219249.02, 218667.15, 218228.54, 219244.96, 219079.86, 218906.39, 219247.55, 219146.54, 218968.76, 219561.53, 219223.4, 218566.43, 218397.41, 219370.75, 218493.49, 218573.44, 218746.64, 219234.8, 218613.95, 218668.34, 219115.53, 219017.71, 218602.37, 218766.01, 218317.56, 219381.66, 219332.38, 218924.28, 218915.04, 218643.88, 218684.79, 218953.06, 218803.2, 218984.46, 218770.34, 218507.84, 218742.77, 219135.96, 218668.59, 219370.24, 218503.93, 218370.52, 219068.98, 218817.77, 219355.08, 219251.37, 219309.07, 219596.54, 218612.34, 219100.91, 219381.63, 218459.67, 218960.17, 218929.11, 219244.96, 218795.19, 219100.26, 218741.85, 219006.96, 219428.96, 219064.38, 219004.76, 219122.69, 219282.49, 218672.34, 219037.85, 218705.22, 218804.0, 218692.32, 219294.41, 218586.02, 218790.12, 219335.09, 218680.14, 219249.76, 219101.31, 219097.74, 219076.36, 219018.45, 218697.99, 219025.06, 218899.75, 218556.68, 219265.79, 219574.39, 218794.52, 219145.95, 218925.62, 219127.65, 219056.95, 219077.03, 219244.57, 218933.17, 218956.37, 219269.38, 219033.76, 219413.5, 218756.06, 219105.46, 218724.89, 218496.23, 219035.89, 218481.93, 218832.67, 218703.86, 219221.47, 219173.89, 219042.25, 219130.3, 219404.45, 218500.94, 219051.7, 218742.24, 218880.65, 218402.41, 218906.74, 218762.33, 218897.29, 218848.33, 218982.07, 218522.98, 218487.78, 218612.96, 218876.21, 218875.93, 219340.43, 218453.3, 218944.2, 218562.1, 219225.06, 218566.23, 219007.32, 218999.88, 218855.4, 218828.88, 218462.49, 219034.8, 219278.8, 219238.2, 218869.96, 219169.21, 219044.76, 219211.18, 219421.28, 219180.12, 218629.85, 219023.86, 218714.1, 218947.11, 218617.48, 218700.91, 218850.7, 218895.3, 218845.15, 219103.58, 219243.05, 219347.03, 219398.23, 218833.58, 218971.42, 218865.74, 219049.95, 219167.12, 218714.6, 218497.65, 219243.31, 218748.01, 219179.5, 218944.02, 218807.34, 218734.58, 218916.45, 218494.78, 219172.95, 218328.73, 218910.09, 219193.11, 218910.45, 218493.3, 218482.45, 218487.75, 219022.74, 219322.6, 218606.02, 218944.66, 219172.53, 218728.93, 218617.59, 218836.07, 219205.39, 218678.36, 219063.88, 219427.04, 218624.88, 218836.98, 219028.67, 219018.26, 218756.42, 218871.67, 219019.09, 219434.25, 218864.13, 218979.06, 218947.26, 218842.11, 219301.29, 219362.16, 218807.35, 218623.17, 219115.58, 218574.74, 219190.03, 218981.0, 218810.95, 218782.65, 218675.08, 219083.61, 218739.91, 219115.72, 219084.24, 219213.31, 218711.68, 218477.29, 219077.48, 219013.46, 218578.19, 218828.5, 218763.44, 218796.98, 219147.09, 219233.2, 218404.12, 218874.92, 218537.94, 218959.12, 218686.02, 219203.37, 218861.92, 219151.2, 218453.68, 218659.18, 218939.68, 218681.1, 218804.89, 219396.45, 218951.64, 219174.44, 218811.59, 218920.29, 218927.39, 219151.55, 218611.07, 218801.14, 218920.53, 219201.08, 219205.54, 218866.49, 218620.28, 218678.84, 219317.5, 218921.01, 218787.27, 218656.56, 218970.67, 219319.08, 218896.81, 219073.43, 218711.19, 218768.53, 219239.94, 218736.06, 218808.53, 219180.38, 219313.12, 218759.36, 218201.48, 218692.53, 218762.85, 218838.55, 219227.79, 219239.46, 218968.54, 219247.24, 219015.04, 219412.63, 219217.95, 218764.38, 218795.86, 219112.38, 218886.09, 219324.86, 219024.4, 218691.06, 218863.24, 219095.84, 218974.27, 218749.47, 218444.44, 219102.32, 218581.73, 219071.0, 219061.02, 218846.47, 219651.85, 218700.34, 218584.88, 218443.19, 218705.98, 218626.16, 219336.74, 219168.22, 218758.19, 218976.84, 219318.06, 218854.46, 218872.94, 218724.32, 218772.99, 218655.34, 218971.71, 218715.57, 219022.14, 218495.64, 219199.23, 219030.31, 219610.84, 218773.48, 218738.43, 219010.29, 219279.04, 219486.95, 219019.14, 218334.8, 219058.96, 218915.29, 218728.17, 218685.07, 218632.82, 218958.04, 219338.24, 219162.18, 218570.31, 219111.21, 218888.34, 218854.69, 218807.49, 218342.21, 218847.9, 219147.27, 218947.93, 218818.84, 219183.46, 219364.46, 218964.73, 218240.95, 218872.81, 219045.58, 219129.46, 219231.2, 218872.34, 219483.31, 219011.51, 218452.62, 218928.12, 219383.62, 219135.0, 218932.51, 219611.54, 218566.94, 218711.32, 219381.63, 219175.32, 219173.92, 218785.67, 219378.37, 219214.93, 218741.5, 219192.84, 218899.78, 219453.35, 218793.35, 218644.27, 219110.87, 218707.53, 219091.7, 219606.28, 219031.3, 218762.08, 219174.37, 218599.02, 218867.26, 219001.91, 219114.86, 218776.57, 219048.12, 218702.89, 219056.49, 218693.38, 219212.8, 218542.74, 219055.96, 218478.57, 218724.54, 219135.29, 218880.73, 218735.75, 219178.89, 218906.12, 219039.24, 218903.2, 218892.09, 218929.62, 219004.62, 218632.01, 219325.1, 219090.56, 218683.63, 218695.42, 218937.05, 218104.63, 219000.86, 218834.44, 218820.3, 218539.52, 218727.27, 218753.36, 218895.02, 218950.92, 218767.57, 218673.4, 218902.91, 218968.94, 219023.1, 219058.11, 218686.24, 218607.3, 218632.05, 218799.03, 218893.47, 219241.63, 219105.48, 219158.98, 218815.82, 219510.08, 219182.05, 219112.55, 218779.08, 218954.64, 219011.43];
 
-        // LP daily results (from lp_daily_results.csv)
+        // LP daily results (from lp_daily_results.csv) - with deposit data
         const lpData = [
         {
                 "date": "2026-01-02",
@@ -879,7 +886,9 @@
                 "fees_op": 4.43,
                 "cumulative_fees_eth": 0.000388,
                 "cumulative_fees_op": 4.43,
-                "liquidity_share": 0.0182
+                "liquidity_share": 0.0182,
+                "eth_deposited": 0.392,
+                "op_deposited": 3290
         },
         {
                 "date": "2026-01-03",
@@ -1115,12 +1124,47 @@
         }
 ];
 
+        // LP deposit data (from lp_daily_results.csv)
+        const lpDepositData = [
+            { date: '2026-01-02', eth: 0.392, op: 3290 },
+            { date: '2026-01-03', eth: 0.353, op: 3236 },
+            { date: '2026-01-04', eth: 0.251, op: 1957 },
+            { date: '2026-01-05', eth: 0.294, op: 1890 },
+            { date: '2026-01-06', eth: 0.467, op: 2896 },
+            { date: '2026-01-07', eth: 0.455, op: 3243 },
+            { date: '2026-01-08', eth: 0.455, op: 3375 },
+            { date: '2026-01-09', eth: 0.521, op: 3466 },
+            { date: '2026-01-10', eth: 0.461, op: 2856 },
+            { date: '2026-01-11', eth: 0.220, op: 1265 },
+            { date: '2026-01-12', eth: 0.229, op: 1583 },
+            { date: '2026-01-13', eth: 0.367, op: 2813 },
+            { date: '2026-01-14', eth: 0.910, op: 2534 },
+            { date: '2026-01-15', eth: 0.489, op: 2387 },
+            { date: '2026-01-16', eth: 0.399, op: 2334 },
+            { date: '2026-01-17', eth: 0.365, op: 2109 },
+            { date: '2026-01-18', eth: 0.373, op: 1822 },
+            { date: '2026-01-19', eth: 0.320, op: 2675 },
+            { date: '2026-01-20', eth: 0.687, op: 4981 },
+            { date: '2026-01-21', eth: 0.616, op: 3851 },
+            { date: '2026-01-22', eth: 0.687, op: 3805 },
+            { date: '2026-01-23', eth: 0.448, op: 2369 },
+            { date: '2026-01-24', eth: 0.455, op: 2575 },
+            { date: '2026-01-25', eth: 0.220, op: 1284 },
+            { date: '2026-01-26', eth: 0.416, op: 2693 },
+            { date: '2026-01-27', eth: 0.492, op: 3162 },
+            { date: '2026-01-28', eth: 0.382, op: 2907 },
+            { date: '2026-01-29', eth: 0.551, op: 4018 },
+            { date: '2026-01-30', eth: 0.502, op: 5580 },
+            { date: '2026-01-31', eth: 0.665, op: 6561 }
+        ];
+
         // ==================== CHART RENDERING ====================
 
         // Chart 1: Daily Transaction Fees
         (function() {
             const totalFees = dailyFeesData.reduce((sum, d) => sum + d.fees_eth, 0);
-            const usableFees = dailyFeesData.slice(1).reduce((sum, d) => sum + d.fees_eth, 0);
+            // Usable = Jan 2-30 fees (used as budgets for Jan 3-31)
+            const usableFees = dailyFeesData.slice(1, -1).reduce((sum, d) => sum + d.fees_eth, 0);
 
             const chartData = dailyFeesData.map((d, i) => {
                 const isJan1 = i === 0;
@@ -1129,7 +1173,7 @@
                     x: new Date(d.date).getTime(),
                     y: d.fees_eth,
                     color: isJan1 ? '#cccccc' : (isJan31 ? '#ff6b6b' : '#ff0420'),
-                    note: isJan1 ? 'Jan 1: No T-1 data' : (isJan31 ? 'Jan 31: Not used in simulation' : '')
+                    note: isJan1 ? 'Jan 1: No T-1 data' : (isJan31 ? 'Jan 31: Would be Feb 1 budget' : '')
                 };
             });
 
@@ -1137,7 +1181,7 @@
                 chart: { type: 'column', zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: null },
                 subtitle: {
-                    text: 'Total: ' + totalFees.toFixed(2) + ' ETH | Usable (T-1 rule): ' + usableFees.toFixed(2) + ' ETH',
+                    text: 'Total Jan fees: ' + totalFees.toFixed(2) + ' ETH | Used in simulation (Jan 2-30): ' + usableFees.toFixed(2) + ' ETH',
                     style: { fontSize: '14px', color: '#666' }
                 },
                 xAxis: {
@@ -1173,7 +1217,7 @@
             });
         })();
 
-        // Chart 2: Monte Carlo Histogram
+        // Chart 2: Monte Carlo Histogram (manual binning for density %)
         (function() {
             const n = monteCarloResults.length;
             const mean = monteCarloResults.reduce((a, b) => a + b, 0) / n;
@@ -1191,56 +1235,68 @@
                 '<div class="stat-item"><div class="stat-value">' + min.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Min OP</div></div>' +
                 '<div class="stat-item"><div class="stat-value">' + max.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="stat-label">Max OP</div></div>';
 
+            // Manual binning: 40 bins from 218,000 to 220,000
+            const binMin = 218000;
+            const binMax = 220000;
+            const numBins = 40;
+            const binWidth = (binMax - binMin) / numBins;
+            const bins = new Array(numBins).fill(0);
+
+            monteCarloResults.forEach(val => {
+                const binIndex = Math.min(Math.floor((val - binMin) / binWidth), numBins - 1);
+                if (binIndex >= 0 && binIndex < numBins) bins[binIndex]++;
+            });
+
+            // Convert to density percentage
+            const histogramData = bins.map((count, i) => ({
+                x: binMin + i * binWidth + binWidth / 2,
+                y: (count / n) * 100,
+                binStart: binMin + i * binWidth,
+                binEnd: binMin + (i + 1) * binWidth,
+                count: count
+            }));
+
             Highcharts.chart('chart-monte-carlo', {
-                chart: { type: 'histogram', zoomType: 'x', backgroundColor: 'transparent' },
+                chart: { type: 'column', zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: null },
-                xAxis: [{
+                xAxis: {
                     title: { text: 'Total OP Accumulated' },
-                    labels: { formatter: function() { return (this.value / 1000).toFixed(0) + 'K'; } },
-                    alignTicks: false
-                }, {
-                    opposite: true,
-                    visible: false
-                }],
-                yAxis: [{
-                    title: { text: 'Frequency (# Simulations)' }
-                }, {
-                    opposite: true,
-                    visible: false
-                }],
+                    min: binMin,
+                    max: binMax,
+                    tickInterval: 500,
+                    labels: {
+                        formatter: function() {
+                            return (this.value / 1000).toFixed(1) + 'K';
+                        }
+                    }
+                },
+                yAxis: {
+                    title: { text: 'Density (% of simulations)' },
+                    labels: { format: '{value:.0f}%' }
+                },
                 legend: { enabled: false },
                 tooltip: {
                     headerFormat: '',
-                    pointFormat: '<b>{point.x:.0f} - {point.x2:.0f} OP</b><br/>Simulations: <b>{point.y}</b>'
+                    pointFormat: '<b>{point.binStart:.0f} - {point.binEnd:.0f} OP</b><br/>Density: <b>{point.y:.1f}%</b><br/>Count: {point.count} simulations'
                 },
                 plotOptions: {
-                    histogram: {
-                        binsNumber: 30,
-                        color: '#ff0420',
+                    column: {
+                        pointPadding: 0,
+                        groupPadding: 0,
                         borderWidth: 1,
-                        borderColor: '#cc0318'
+                        borderColor: '#cc0318',
+                        color: '#ff0420'
                     }
                 },
                 series: [{
-                    name: 'Histogram',
-                    type: 'histogram',
-                    xAxis: 1,
-                    yAxis: 1,
-                    baseSeries: 's1',
-                    zIndex: -1
-                }, {
-                    name: 'Data',
-                    type: 'scatter',
-                    id: 's1',
-                    data: monteCarloResults,
-                    visible: false,
-                    showInLegend: false
+                    name: 'Density',
+                    data: histogramData
                 }],
                 credits: { enabled: false }
             });
         })();
 
-        // Chart 3-5: LP Strategy Charts
+        // Chart 3-6: LP Strategy Charts
         (function() {
             const totalFeesETH = lpData[lpData.length - 1].cumulative_fees_eth;
             const totalFeesOP = lpData[lpData.length - 1].cumulative_fees_op;
@@ -1248,24 +1304,77 @@
             const finalPrice = 10467.93;
             const totalFeesOPEquiv = totalFeesOP + (totalFeesETH * finalPrice);
 
+            // Calculate total deposits
+            const totalETHDeposited = lpDepositData.reduce((sum, d) => sum + d.eth, 0);
+            const totalOPDeposited = lpDepositData.reduce((sum, d) => sum + d.op, 0);
+
             document.getElementById('lp-summary').innerHTML =
-                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesETH.toFixed(4) + '</div><div class="lp-summary-label">Total ETH Fees Earned</div></div>' +
-                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesOP.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Total OP Fees Earned</div></div>' +
-                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesOPEquiv.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Total Fees (OP equiv)</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalETHDeposited.toFixed(2) + '</div><div class="lp-summary-label">Total ETH Deposited</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalOPDeposited.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Total OP Deposited</div></div>' +
+                '<div class="lp-summary-item"><div class="lp-summary-value">' + totalFeesOPEquiv.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</div><div class="lp-summary-label">Fees Earned (OP equiv)</div></div>' +
                 '<div class="lp-summary-item"><div class="lp-summary-value">' + (medianLiquidityShare * 100).toFixed(1) + '%</div><div class="lp-summary-label">Median Liquidity Share</div></div>';
 
             const dates = lpData.map(d => new Date(d.date).getTime());
+            const depositDates = lpDepositData.map(d => new Date(d.date).getTime());
+            const ethDeposits = lpDepositData.map((d, i) => [depositDates[i], d.eth]);
+            const opDeposits = lpDepositData.map((d, i) => [depositDates[i], d.op]);
+
+            // Calculate cumulative deposits
+            let cumEth = 0, cumOp = 0;
+            const cumEthDeposits = lpDepositData.map((d, i) => {
+                cumEth += d.eth;
+                return [depositDates[i], cumEth];
+            });
+            const cumOpDeposits = lpDepositData.map((d, i) => {
+                cumOp += d.op;
+                return [depositDates[i], cumOp];
+            });
+
             const feesETH = lpData.map((d, i) => [dates[i], d.fees_eth]);
             const feesOP = lpData.map((d, i) => [dates[i], d.fees_op]);
             const cumFeesETH = lpData.map((d, i) => [dates[i], d.cumulative_fees_eth]);
             const cumFeesOP = lpData.map((d, i) => [dates[i], d.cumulative_fees_op]);
             const liqShare = lpData.map((d, i) => [dates[i], d.liquidity_share * 100]);
 
+            // Daily & Cumulative Deposits
+            Highcharts.chart('chart-lp-deposits', {
+                chart: { zoomType: 'x', backgroundColor: 'transparent' },
+                title: { text: 'Daily LP Deposits (Position Growth)', style: { fontSize: '16px', fontWeight: 'bold' } },
+                subtitle: { text: 'ETH and OP deposited each day based on T-1 fees + earned LP fees' },
+                xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
+                yAxis: [{
+                    title: { text: 'Cumulative ETH Deposited', style: { color: '#627eea' } },
+                    labels: { format: '{value:.1f}', style: { color: '#627eea' } }
+                }, {
+                    title: { text: 'Cumulative OP Deposited', style: { color: '#ff0420' } },
+                    labels: { format: '{value:,.0f}', style: { color: '#ff0420' } },
+                    opposite: true
+                }],
+                tooltip: { shared: true },
+                legend: { enabled: true },
+                series: [{
+                    name: 'Cumulative ETH',
+                    type: 'area',
+                    data: cumEthDeposits,
+                    color: '#627eea',
+                    fillOpacity: 0.3,
+                    yAxis: 0
+                }, {
+                    name: 'Cumulative OP',
+                    type: 'area',
+                    data: cumOpDeposits,
+                    color: '#ff0420',
+                    fillOpacity: 0.3,
+                    yAxis: 1
+                }],
+                credits: { enabled: false }
+            });
+
             // Daily Fees
             Highcharts.chart('chart-lp-fees', {
                 chart: { zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: 'Daily LP Fees Earned', style: { fontSize: '16px', fontWeight: 'bold' } },
-                subtitle: { text: 'ETH and OP fees earned from trading activity in our LP range' },
+                subtitle: { text: 'ETH and OP fees earned from trading activity in the LP range' },
                 xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
                 yAxis: [{
                     title: { text: 'ETH Fees', style: { color: '#627eea' } },
@@ -1331,7 +1440,7 @@
             Highcharts.chart('chart-lp-liquidity', {
                 chart: { zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: 'Share of Pool Liquidity Over Time', style: { fontSize: '16px', fontWeight: 'bold' } },
-                subtitle: { text: "Our position's share of median active liquidity in the Uniswap V3 pool" },
+                subtitle: { text: "The position's share of median active liquidity in the Uniswap V3 pool" },
                 xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
                 yAxis: {
                     title: { text: 'Liquidity Share (%)' },
