@@ -513,7 +513,7 @@
                 <h2>Executive Summary</h2>
                 <div class="card" style="border-left: 4px solid #00a854; background: rgba(0, 200, 83, 0.05);">
                     <p style="font-size: 20px; font-weight: 600; color: #00a854; margin-bottom: 16px;">Bottom Line: The LP strategy accumulated 6% more OP than random buying — and beat all 1,000 Monte Carlo simulations.</p>
-                    <p style="margin-bottom: 0;">Using January 2026 OP Mainnet transaction fees (~22 ETH), we compared two buyback strategies: random-timed DCA purchases vs. a simple wide-range LP position on Uniswap V3. The LP approach earned ~232,617 OP-equivalent compared to the Monte Carlo mean of ~218,923 OP. More notably, LP beat the <em>maximum</em> outcome across 1,000 random simulations — proving the strategy advantage isn't luck, it's fee compounding.</p>
+                    <p style="margin-bottom: 0;">Using January 2026 OP Mainnet transaction fees (~22 ETH), this analysis compares two buyback strategies: random-timed DCA purchases vs. a simple wide-range LP position on Uniswap V3. The LP approach earned ~232,617 OP-equivalent compared to the Monte Carlo mean of ~218,923 OP. More notably, LP beat the <em>maximum</em> outcome across 1,000 random simulations — proving the strategy advantage isn't luck, it's fee compounding.</p>
                 </div>
 
                 <div class="stats-grid" style="margin-top: 24px;">
@@ -539,7 +539,7 @@
             <!-- Introduction -->
             <section id="intro">
                 <h2>Introduction</h2>
-                <p>This report analyzes two potential strategies for accumulating OP tokens using protocol transaction fee revenue. We compare a naive Dollar-Cost Averaging (DCA) approach via random market purchases versus a passive liquidity provision strategy on Uniswap V3.</p>
+                <p>This report analyzes two potential strategies for accumulating OP tokens using protocol transaction fee revenue, comparing a naive Dollar-Cost Averaging (DCA) approach via random market purchases versus a passive liquidity provision strategy on Uniswap V3.</p>
                 <p>The goal is to understand which approach yields more OP tokens over a 30-day simulation period, accounting for execution timing variance and LP fee income.</p>
             </section>
 
@@ -605,7 +605,7 @@
                         <li><code>match_tokens_to_range()</code> - Determine ETH/OP split needed for a given tick range</li>
                         <li><code>get_liquidity()</code> - Calculate liquidity units from token deposits</li>
                         <li><code>get_position_balance()</code> - Get current ETH and OP in the position at any price</li>
-                        <li><code>tick_to_price()</code> - Check if swap prices fall within our LP range</li>
+                        <li><code>tick_to_price()</code> - Check if swap prices fall within the LP range</li>
                     </ul>
                     <p>Final position value is converted to OP-equivalent by pricing the ETH component at end-of-period price.</p>
                 </div>
@@ -1398,7 +1398,7 @@
             Highcharts.chart('chart-lp-fees', {
                 chart: { zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: 'Daily LP Fees Earned', style: { fontSize: '16px', fontWeight: 'bold' } },
-                subtitle: { text: 'ETH and OP fees earned from trading activity in our LP range' },
+                subtitle: { text: 'ETH and OP fees earned from trading activity in the LP range' },
                 xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
                 yAxis: [{
                     title: { text: 'ETH Fees', style: { color: '#627eea' } },
@@ -1464,7 +1464,7 @@
             Highcharts.chart('chart-lp-liquidity', {
                 chart: { zoomType: 'x', backgroundColor: 'transparent' },
                 title: { text: 'Share of Pool Liquidity Over Time', style: { fontSize: '16px', fontWeight: 'bold' } },
-                subtitle: { text: "Our position's share of median active liquidity in the Uniswap V3 pool" },
+                subtitle: { text: "The position's share of median active liquidity in the Uniswap V3 pool" },
                 xAxis: { type: 'datetime', labels: { format: '{value:%b %e}' } },
                 yAxis: {
                     title: { text: 'Liquidity Share (%)' },
