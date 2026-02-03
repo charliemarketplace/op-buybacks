@@ -466,11 +466,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">OP Buybacks</div>
-                <div class="sidebar-subtitle">Strategy Analysis Report</div>
+                <div class="sidebar-subtitle">Argument for Protocol Owned Liquidity</div>
             </div>
             <nav class="toc">
                 <div class="toc-section">Overview</div>
-                <a href="#executive-summary" class="toc-link">Executive Summary</a>
+                <a href="#executive-summary" class="toc-link">Key Takeaway</a>
                 <a href="#intro" class="toc-link">Introduction</a>
                 <a href="#assumptions" class="toc-link">Simplifying Assumptions</a>
 
@@ -495,25 +495,24 @@
         <!-- Main Content -->
         <main class="main">
             <header class="page-header">
-                <h1 class="page-title"><span>OP</span> Buyback Strategy Analysis</h1>
-                <p class="page-subtitle">Comparing Monte Carlo Random Purchases vs. Simple Wide LP Positions</p>
+                <h1 class="page-title"><span> An Argument for Protocol Owned Liquidity </span> </h1> 
+                <p class="page-subtitle">Monte Carlo Random Purchases vs. A single Wide Uni v3 Position</p>
                 <div class="page-meta">
                     <span>January 2026</span>
-                    <span>OP Mainnet Data</span>
-                    <span>1,000 Simulations</span>
+                    <span>OP Mainnet OP/ETH 0.3% pool</span>
+                    <span>Data: Flipside Crypto and Dune Analytics</span>
                 </div>
                 <div class="author-info" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
                     <span style="color: var(--text-secondary);">Author: <strong style="color: var(--text-primary);">Carlos Mercado</strong></span>
-                    <a href="https://github.com/charliemarketplace/op-buybacks" target="_blank" style="margin-left: 16px; color: var(--op-red); text-decoration: none;">GitHub Repository</a>
+                    <a href="https://github.com/charliemarketplace/op-buybacks" target="_blank" style="margin-left: 16px; color: var(--op-red); text-decoration: none;">GitHub Repo</a>
                 </div>
             </header>
 
             <!-- Executive Summary -->
             <section id="executive-summary">
-                <h2>Executive Summary</h2>
-                <div class="card" style="border-left: 4px solid #00a854; background: rgba(0, 200, 83, 0.05);">
-                    <p style="font-size: 20px; font-weight: 600; color: #00a854; margin-bottom: 16px;">Bottom Line: The LP strategy accumulated 6% more OP than random buying — and beat all 1,000 Monte Carlo simulations.</p>
-                    <p style="margin-bottom: 0;">Using January 2026 OP Mainnet transaction fees (~22 ETH), this analysis compares two buyback strategies: random-timed DCA purchases vs. a simple wide-range LP position on Uniswap V3. The LP approach earned ~232,617 OP-equivalent compared to the Monte Carlo mean of ~218,923 OP. More notably, LP beat the <em>maximum</em> outcome across 1,000 random simulations — proving the strategy advantage isn't luck, it's fee compounding.</p>
+                <h2>Key Takeaway</h2>
+                <div class="card" style="border-left: 4px solid var(--op-red); background: var(--op-red-light);">
+                    <p style="font-size: 20px; font-weight: 600; color: #000000; margin-bottom: 16px;"> A single month of OP Mainnet transaction fees (Jan 2026) would 20%+ increase the liquidity of OP/WETH on mainnet, make OP a market leader in protocol owned liquidity, and returns MORE OP than randomized buybacks.  </p>
                 </div>
 
                 <div class="stats-grid" style="margin-top: 24px;">
@@ -521,26 +520,28 @@
                         <div class="stat-value">218,923</div>
                         <div class="stat-label">Monte Carlo Mean</div>
                     </div>
-                    <div class="stat-card" style="border-top-color: #00a854;">
-                        <div class="stat-value" style="color: #00a854;">232,617</div>
+                    <div class="stat-card" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">232,617</div>
                         <div class="stat-label">LP Result (OP-equiv)</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value">+6.3%</div>
-                        <div class="stat-label">LP Advantage</div>
+                    <div class="stat-card" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">+6.3%</div>
+                        <div class="stat-label" style="color: #000000;">Single Month LP Excess Returns (OP)</div>
                     </div>
-                    <div class="stat-card eth">
-                        <div class="stat-value">~166K</div>
-                        <div class="stat-label">Annualized Extra OP</div>
+                    <div class="stat-card eth" style="border-top-color: #000000;">
+                        <div class="stat-value" style="color: #000000;">~166K</div>
+                        <div class="stat-label" style="color: #000000;">Annualized Excess Returns (OP)</div>
                     </div>
                 </div>
             </section>
 
             <!-- Introduction -->
             <section id="intro">
-                <h2>Introduction</h2>
-                <p>This report analyzes two potential strategies for accumulating OP tokens using protocol transaction fee revenue, comparing a naive Dollar-Cost Averaging (DCA) approach via random market purchases versus a passive liquidity provision strategy on Uniswap V3.</p>
-                <p>The goal is to understand which approach yields more OP tokens over a 30-day simulation period, accounting for execution timing variance and LP fee income.</p>
+                <h2>The Theory</h2>
+                <p> Buybacks can be dangerous. They invite discounted cashflow modeling that can result in high short-term volatility of token price. 
+                    Protocol Owned Liquidity takes a cut of this kind of arbitrage and generates a flywheel of activity that compounds over time.</p>
+                <p> Looking at Jan 2026 OPM swap data for the Uniswap v3 OP/WETH 0.3% pool on OP Mainnet (the most liquid OP/WETH pool of any platform on OPM) to compare randomized OP buys vs. a single wide concentrated liquidity position for that pool, with daily compounding of fees.</p>
+                <p>The LP strategy would have collected a position worth ~232,617 OP (Jan 31 closing price) compared to the average of 1,000 Monte Carlo simulations of randomized buybacks ~218,923 OP. Notably, it also beat the <em>maximum</em> outcome across the 1,000 random simulations — showing the value of fee compounding.</p>
             </section>
 
             <!-- Simplifying Assumptions -->
@@ -559,7 +560,7 @@
                 <div class="card">
                     <p><strong>Script:</strong> <code>01_processing.py</code></p>
                     <p><strong>Input:</strong> Raw swap data (<code>opweth03-swaps-jan2026.csv</code>) with sqrtPriceX96, amounts, timestamps</p>
-                    <p><strong>Output:</strong> Hourly OHLCV data (<code>hourly_ohlcv.csv</code>) with:</p>
+                    <p><strong>Output:</strong> Hourly Open-High-Low-Close price data from the swaps(<code>hourly_ohlcv.csv</code>)</p>
                     <ul>
                         <li>OHLC prices (OP per ETH) derived from sqrtPriceX96</li>
                         <li>Buy/sell volumes for OP and ETH</li>
@@ -574,14 +575,13 @@
                 <h3>Strategy 1: Monte Carlo Random Purchases</h3>
                 <div class="card">
                     <p><strong>Script:</strong> <code>02_monte_carlo_buys.py</code></p>
-                    <p>Simulates a naive DCA approach where the protocol buys OP at random times:</p>
-                    <ul>
-                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees (in ETH)</li>
-                        <li><strong>Execution:</strong> Randomly select 1-10 purchase times each day</li>
+                    <p>Every day (Jan 2 - Jan 31) spend the previous day's tx fees (Jan 1 - Jan 30) buying OP at random times in random splits.<ul>
+                        <li><strong>Daily Budget:</strong> Day T budget = Day T-1 transaction fees (in ETH)</li>
+                        <li><strong>Execution:</strong> Randomly select 1-10 purchase hours each day</li>
                         <li><strong>Price Sampling:</strong> Execute buys at prices sampled uniformly from each hour's low-high range</li>
                         <li><strong>Simulations:</strong> 1,000 runs to capture distribution of outcomes</li>
                     </ul>
-                    <p>This represents a simple "just buy OP" strategy with no attempt at market timing.</p>
+                    <p>Other potential strategies including RSI/MACD (technical indicators) purchasing, Bayesian Updating & Kelly Criterion for sizing, etc. </p>
                 </div>
             </section>
 
@@ -590,16 +590,16 @@
                 <h3>Strategy 2: Simple Wide LP</h3>
                 <div class="card">
                     <p><strong>Script:</strong> <code>03_simple_lp.py</code></p>
-                    <p>Instead of buying OP directly, deposit fees into a Uniswap V3 LP position:</p>
+                    <p>Every day (Jan 2 - Jan 31) deposit the previous day's tx fees (Jan 1 - Jan 30) AND any accumulated swap fees into a fixed wide range LP position.</p>
                     <ul>
-                        <li><strong>Tick Range:</strong> 90000 to 94980 (~8,099 to ~13,327 OP/ETH) - a wide range capturing likely price movement</li>
-                        <li><strong>Budget Rule:</strong> Day T budget = Day T-1 transaction fees + Day T-1 earned LP fees (compounding)</li>
+                        <li><strong>Purposefully Wide Position:</strong> 90000 to 94980 (~8,099 to ~13,327 OP/ETH) - a wide range capturing likely price movement</li>
+                        <li><strong>Daily Budget:</strong> Day T budget = Day T-1 transaction fees + Day T-1 earned LP fees (compounding)</li>
                         <li><strong>Token Split:</strong> Split ETH budget into ETH + OP at the required ratio using <code>match_tokens_to_range()</code></li>
                         <li><strong>Liquidity:</strong> Add liquidity to the position using <code>get_liquidity()</code></li>
-                        <li><strong>Fee Calculation:</strong> Per-swap: <code>our_share = our_liquidity / (pool_liquidity + our_liquidity)</code></li>
+                        <li><strong>Fee Calculation:</strong> Swap level <code>fee_share = position_liquidity / (active_liquidity_in_pool + position_liquidity)</code></li>
                     </ul>
 
-                    <h4>Key Uniswap Functions Used</h4>
+                    <h4>Wrote & tested custom Uniswap v3 Python package</h4>
                     <ul>
                         <li><code>sqrtpx96_to_price()</code> - Convert on-chain price format to human-readable OP/ETH</li>
                         <li><code>match_tokens_to_range()</code> - Determine ETH/OP split needed for a given tick range</li>
@@ -614,14 +614,10 @@
             <!-- Chart: Daily TX Fees -->
             <section id="chart-fees">
                 <h2>Results</h2>
-
-                <h3>Daily Transaction Fees</h3>
-                <p>Shows daily OP Mainnet transaction fees for January 2026. The T-1 rule means Day T's budget equals Day T-1's fees, creating a 1-day lag.</p>
-
                 <div class="chart-container">
                     <div class="chart-header">
-                        <div class="chart-header-title">Daily fees averaged ~0.7 ETH, totaling 22 ETH usable for the simulation</div>
-                        <div class="chart-header-desc">Jan 1 (grey): No T-1 data available | Jan 31 (red): Would be Feb 1's budget, excluded from Jan simulation</div>
+                        <div class="chart-header-title">Jan 2026: OP Mainnet tx fees averaged ~0.7 ETH/day.</div>
+                        <div class="chart-header-desc">Jan 1 (grey): No Dec 31 budget available | Jan 31 (red): Would be Feb 1's budget, no impact here.</div>
                     </div>
                     <div id="chart-daily-fees" class="chart"></div>
                 </div>
@@ -630,7 +626,7 @@
             <!-- Chart: Monte Carlo -->
             <section id="chart-monte-carlo">
                 <h3>Monte Carlo Simulation Distribution</h3>
-                <p>Histogram showing the distribution of total OP accumulated across 1,000 simulations. The tight distribution demonstrates that random timing within each day has minimal impact on outcomes.</p>
+                <p>Total OP purchased across 1,000 simulations of randomized buybacks.</p>
 
                 <div class="chart-container">
                     <div class="chart-header">
